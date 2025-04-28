@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: Semestrovka2
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/oris_semestrovka2
+    username: postgres
+    password: cKjdj21637
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: jdbc:postgresql://localhost:5432/oris_semestrovka2
+      username: postgres
+      password: cKjdj21637
+      driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  liquibase:
+    change-log: classpath:db/changelog/changelog-master.yaml
+    enabled: true

@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004_create_accountproject
+      author: Nikita
+      changes:
+        - createTable:
+            tableName: account_project
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: account_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: account_project
+            baseColumnNames: account_id
+            referencedTableName: account
+            referencedColumnNames: id
+            onUpdate: CASCADE
+            onDelete: CASCADE
+            constraintName: fk_account_project_account_id_account
+
+        - addForeignKeyConstraint:
+            baseTableName: account_project
+            baseColumnNames: project_id
+            referencedTableName: project
+            referencedColumnNames: id
+            onUpdate: CASCADE
+            onDelete: CASCADE
+            constraintName: fk_account_project_project_id_project
+
+        - addForeignKeyConstraint:
+            baseTableName: account_project
+            baseColumnNames: role_id
+            referencedTableName: project_role
+            referencedColumnNames: id
+            onUpdate: CASCADE
+            onDelete: CASCADE
+            constraintName: fk_account_project_role_id_project_role
+
+        - addUniqueConstraint:
+            tableName: account_project
+            columnNames: account_id, project_id
+            constraintName: account_project_uq
