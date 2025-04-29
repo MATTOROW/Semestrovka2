@@ -3,6 +3,7 @@ package ru.itis.semesterwork.second.api.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.itis.semesterwork.second.dto.request.AccountRequest;
+import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 
@@ -14,7 +15,7 @@ public interface AccountRestAPI {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    List<AccountResponse> getAll();
+    AccountDetailedResponse getCurrentAccount();
 
     @GetMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)

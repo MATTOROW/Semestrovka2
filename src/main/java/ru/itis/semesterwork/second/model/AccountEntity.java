@@ -21,10 +21,8 @@ public class AccountEntity {
     @Column(length = 254, unique = true, nullable = false)
     private String email;
 
-    @Column(length = 60, nullable = false)
-    private String password;
-
-    private boolean enabled;
+    @Column(name = "password", length = 60, nullable = false)
+    private String hashed_password;
 
     @OneToOne(mappedBy = "accountEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private AccountInfoEntity accountInfoEntity;
