@@ -9,7 +9,7 @@ import lombok.Setter;
 @Table(name = "account_info")
 @Getter@Setter
 @NoArgsConstructor
-public class AccountInfo {
+public class AccountInfoEntity {
 
     @Id
     @Column(name = "account_id")
@@ -24,6 +24,6 @@ public class AccountInfo {
     @OneToOne
     @MapsId
     @JoinColumn(name = "account_id")
-    private Account account;
+    private AccountEntity accountEntity;
 
 }

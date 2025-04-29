@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Task {
+public class TaskEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,20 +39,20 @@ public class Task {
     @Column(length = 20, nullable = false)
     private String status;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Subtask> subtasks;
+    @OneToMany(mappedBy = "taskEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SubtaskEntity> subtaskEntities;
 
-    public void addSubtask(Subtask subtask) {
-        if (subtasks != null) {
-            subtask.setTask(this);
-            subtasks.add(subtask);
+    public void addSubtask(SubtaskEntity subtaskEntity) {
+        if (subtaskEntities != null) {
+            subtaskEntity.setTaskEntity(this);
+            subtaskEntities.add(subtaskEntity);
         }
     }
 
-    public void removeSubtask(Subtask subtask) {
-        if (subtasks != null) {
-            subtasks.remove(subtask);
-            subtask.setTask(null);
+    public void removeSubtask(SubtaskEntity subtaskEntity) {
+        if (subtaskEntities != null) {
+            subtaskEntities.remove(subtaskEntity);
+            subtaskEntity.setTaskEntity(null);
         }
     }
 }

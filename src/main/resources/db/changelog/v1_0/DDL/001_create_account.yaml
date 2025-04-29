@@ -31,12 +31,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: inner_id
-                  type: UUID
-                  constraints:
-                    nullable: false
-                    unique: true
-              - column:
                   name: enabled
                   type: BOOLEAN
                   defaultValueBoolean: true

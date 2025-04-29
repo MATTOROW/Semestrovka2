@@ -5,13 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "account")
 @Getter@Setter
 @NoArgsConstructor
-public class Account {
+public class AccountEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,16 +24,13 @@ public class Account {
     @Column(length = 60, nullable = false)
     private String password;
 
-    @Column(name = "inner_id", unique = true)
-    private UUID innerId;
-
     private boolean enabled;
 
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private AccountInfo accountInfo;
+    @OneToOne(mappedBy = "accountEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private AccountInfoEntity accountInfoEntity;
 
-    public void setAccountInfo(AccountInfo accountInfo) {
-        this.accountInfo = accountInfo;
-        accountInfo.setAccount(this);
+    public void setAccountInfoEntity(AccountInfoEntity accountInfoEntity) {
+        this.accountInfoEntity = accountInfoEntity;
+        accountInfoEntity.setAccountEntity(this);
     }
 }

@@ -16,23 +16,23 @@ public interface AccountRestAPI {
     @ResponseStatus(HttpStatus.OK)
     List<AccountResponse> getAll();
 
-    @GetMapping("/{innerId}")
+    @GetMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
-    AccountResponse findByInnerId(@PathVariable("innerId") UUID accountInnerId);
+    AccountResponse findByUsername(@PathVariable("username") String username);
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     UUID create(@RequestBody AccountRequest accountRequest);
 
-    @PutMapping("/{innerId}")
+    @PutMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
-    void updateByInnerId(@PathVariable("innerId") UUID accountInnerId, @RequestBody AccountRequest accountRequest);
+    void updateByUsername(@PathVariable("username") String username, @RequestBody AccountRequest accountRequest);
 
-    @DeleteMapping("/{innerId}")
+    @DeleteMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
-    void deleteByInnerId(@PathVariable("innerId") UUID accountInnerId);
+    void deleteByUsername(@PathVariable("username") String username);
 
-    @GetMapping("/{accountInnerId}/projects")
+    @GetMapping("/{username}/projects")
     @ResponseStatus(HttpStatus.OK)
-    List<ProjectResponse> getAllAccountProjects(@PathVariable("accountInnerId") UUID accountInnerId);
+    List<ProjectResponse> getAllAccountProjects(@PathVariable("username") String username);
 }
