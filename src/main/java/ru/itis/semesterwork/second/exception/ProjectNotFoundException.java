@@ -6,6 +6,6 @@ import java.util.UUID;
 
 public class ProjectNotFoundException extends ServiceNotFoundException {
     public ProjectNotFoundException(UUID innerId) {
-        super("Проект с id %s не найден.".formatted(innerId));
+        super("Project with id %s not found.".formatted(innerId));
     }
 }

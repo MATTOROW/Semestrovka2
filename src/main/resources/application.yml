@@ -26,3 +26,8 @@ server:
   servlet:
     context-path: /
   port: 8090
+  error:
+    include-stacktrace: never
+    include-message: always
+    whitelabel:
+      enabled: false

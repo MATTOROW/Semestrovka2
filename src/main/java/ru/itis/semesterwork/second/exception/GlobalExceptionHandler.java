@@ -10,9 +10,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceException.class)
     public String handleServiceException(ServiceException ex, Model model) {
         HttpStatus status = ex.getStatus();
-        model.addAttribute("errorCode", status.value());
-        model.addAttribute("errorName", status.getReasonPhrase());
-        model.addAttribute("errorMessage", ex.getMessage());
+        model.addAttribute("status", status.value());
+        model.addAttribute("error", status.getReasonPhrase());
+        model.addAttribute("message", ex.getMessage());
         return "error"; // имя HTML-шаблона (error.html)
     }
 }
