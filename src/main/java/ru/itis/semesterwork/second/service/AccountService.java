@@ -6,6 +6,7 @@ import ru.itis.semesterwork.second.dto.request.AccountRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
+import ru.itis.semesterwork.second.exception.CustomAccountNotFoundException;
 import ru.itis.semesterwork.second.mapper.AccountMapper;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 
@@ -26,13 +27,15 @@ public class AccountService {
 
     public AccountResponse findByUsername(String username) {
         return accountMapper.toResponse(
-                accountRepository.findByUsername(username).orElseThrow(RuntimeException::new)
+                accountRepository.findByUsername(username)
+                        .orElseThrow(() -> new CustomAccountNotFoundException(username))
         );
     }
 
     public AccountDetailedResponse findDetailedByUsername(String username) {
         return accountMapper.toDetailedResponse(
-                accountRepository.findByUsername(username).orElseThrow(RuntimeException::new)
+                accountRepository.findByUsername(username)
+                        .orElseThrow(() -> new CustomAccountNotFoundException(username))
         );
     }
 
