@@ -6,11 +6,10 @@ import ru.itis.semesterwork.second.dto.request.AccountRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
-import ru.itis.semesterwork.second.exception.CustomAccountNotFoundException;
+import ru.itis.semesterwork.second.exception.CustomAccountNotFoundServiceException;
 import ru.itis.semesterwork.second.mapper.AccountMapper;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 
-import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,14 +27,14 @@ public class AccountService {
     public AccountResponse findByUsername(String username) {
         return accountMapper.toResponse(
                 accountRepository.findByUsername(username)
-                        .orElseThrow(() -> new CustomAccountNotFoundException(username))
+                        .orElseThrow(() -> new CustomAccountNotFoundServiceException(username))
         );
     }
 
     public AccountDetailedResponse findDetailedByUsername(String username) {
         return accountMapper.toDetailedResponse(
                 accountRepository.findByUsername(username)
-                        .orElseThrow(() -> new CustomAccountNotFoundException(username))
+                        .orElseThrow(() -> new CustomAccountNotFoundServiceException(username))
         );
     }
 

@@ -16,6 +16,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        hbm2ddl:
+          auto: validate
+        show_sql: true
 
   liquibase:
     change-log: classpath:db/changelog/changelog-master.yaml
@@ -31,3 +38,7 @@ server:
     include-message: always
     whitelabel:
       enabled: false
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

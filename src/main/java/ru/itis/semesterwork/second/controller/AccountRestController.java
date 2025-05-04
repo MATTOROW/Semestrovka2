@@ -8,6 +8,7 @@ import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 import ru.itis.semesterwork.second.service.AccountService;
+import ru.itis.semesterwork.second.util.SecurityContextHelper;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,12 @@ public class AccountRestController implements AccountRestAPI {
 
     @Override
     public AccountDetailedResponse getCurrentAccount() {
-        return null;
+        return accountService.findDetailedByUsername(SecurityContextHelper.getCurrentUsername());
+    }
+
+    @Override
+    public List<AccountResponse> getAll() {
+        return accountService.getAll();
     }
 
     @Override
@@ -36,6 +42,11 @@ public class AccountRestController implements AccountRestAPI {
     @Override
     public void updateByUsername(String username, AccountRequest accountRequest) {
         accountService.updateByUsername(username, accountRequest);
+    }
+
+    @Override
+    public void patchByUsername(String username, AccountRequest accountRequest) {
+
     }
 
     @Override

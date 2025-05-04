@@ -10,12 +10,17 @@ import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 import java.util.List;
 import java.util.UUID;
 
+
 @RequestMapping("/api/v1/accounts")
 public interface AccountRestAPI {
 
-    @GetMapping
+    @GetMapping("/current")
     @ResponseStatus(HttpStatus.OK)
     AccountDetailedResponse getCurrentAccount();
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    List<AccountResponse> getAll();
 
     @GetMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
@@ -28,6 +33,10 @@ public interface AccountRestAPI {
     @PutMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
     void updateByUsername(@PathVariable("username") String username, @RequestBody AccountRequest accountRequest);
+
+    @PatchMapping("/{username}")
+    @ResponseStatus(HttpStatus.OK)
+    void patchByUsername(@PathVariable("username") String username, @RequestBody AccountRequest accountRequest);
 
     @DeleteMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)

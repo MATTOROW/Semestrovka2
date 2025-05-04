@@ -14,10 +14,6 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
     Optional<AccountEntity> findByUsername(String username);
 
-    @Query("UPDATE AccountEntity acc SET acc = :acc WHERE acc.username = :username")
-    @Modifying
-    void updateByUsername(@Param("username") String username, @Param("acc") AccountEntity accountEntity);
-
     @Query("DELETE FROM AccountEntity acc WHERE acc.username = :username")
     @Modifying
     void deleteByUsername(@Param("username") String username);

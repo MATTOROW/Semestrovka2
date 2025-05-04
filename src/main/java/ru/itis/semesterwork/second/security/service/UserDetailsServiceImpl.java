@@ -20,9 +20,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         AccountEntity accountEntity = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username));
 
-        return new UserDetailsImpl(
-                accountEntity.getUsername(),
-                accountEntity.getHashed_password()
-        );
+        return new UserDetailsImpl(accountEntity);
     }
 }
