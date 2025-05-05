@@ -2,6 +2,7 @@ package ru.itis.semesterwork.second.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import ru.itis.semesterwork.second.api.rest.AccountRestAPI;
 import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
@@ -34,19 +35,25 @@ public class AccountRestController implements AccountRestAPI {
         return accountService.findByUsername(username);
     }
 
+
     @Override
-    public String create(RegistrationRequest accountRequest) {
-        return accountService.create(accountRequest);
+    public String createJson(RegistrationRequest accountRequest) {
+        return accountService.create(accountRequest, null);
     }
 
     @Override
-    public void updateByUsername(String username, AccountUpdateRequest request) {
-        accountService.updateByUsername(username, request);
+    public String createMultipart(RegistrationRequest data, MultipartFile icon) {
+        return accountService.create(data, icon);
     }
 
     @Override
-    public void patchByUsername(String username, AccountUpdateRequest request) {
-        accountService.patchByUsername(username, request);
+    public void updateByUsername(String username, AccountUpdateRequest data) {
+        accountService.updateByUsername(username, data);
+    }
+
+    @Override
+    public void patchByUsername(String username, AccountUpdateRequest data) {
+        accountService.patchByUsername(username, data);
     }
 
     @Override

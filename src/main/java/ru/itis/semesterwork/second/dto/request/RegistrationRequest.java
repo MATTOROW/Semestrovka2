@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.springframework.web.multipart.MultipartFile;
 
 public record RegistrationRequest(
         @NotBlank(message = "Username is required")
@@ -20,11 +19,7 @@ public record RegistrationRequest(
         @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
         String password,
 
-        String description,
-        MultipartFile icon
+        String description
 ) {
 
-        public boolean hasIcon() {
-                return icon != null && !icon.isEmpty();
-        }
 }

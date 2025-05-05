@@ -48,19 +48,31 @@ public class GlobalExceptionHandler {
                 .body(errorAttributes);
     }
 
-//    @ExceptionHandler(ConstraintViolationException.class)
-//    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
-//        Map<String, String> errors = new LinkedHashMap<>();
-//        ex.getConstraintViolations().forEach(violation -> {
-//            String fieldName = getSimpleFieldName(violation.getPropertyPath().toString());
-//            errors.put(fieldName, violation.getMessage());
-//        });
-//        return ResponseEntity.badRequest().body(errors);
-//    }
-//
-//    private String getSimpleFieldName(String fullFieldPath) {
-//        return fullFieldPath.substring(fullFieldPath.lastIndexOf('.') + 1);
-//    }
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(
+            WebRequest request,
+            ConstraintViolationException ex,
+            HttpServletRequest httpRequest
+    ) {
+        Map<String, Object> errorAttributes = this.errorAttributes.getErrorAttributes(
+                request,
+                ErrorAttributeOptions.defaults()
+        );
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getConstraintViolations().forEach(violation -> {
+            String fieldName = getSimpleFieldName(violation.getPropertyPath().toString());
+            errors.put(fieldName, violation.getMessage());
+        });
+        errorAttributes.put("status", HttpStatus.BAD_REQUEST.value());
+        errorAttributes.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+        errorAttributes.put("reason", errors);
+        errorAttributes.put("path", httpRequest.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorAttributes);
+    }
+
+    private String getSimpleFieldName(String fullFieldPath) {
+        return fullFieldPath.substring(fullFieldPath.lastIndexOf('.') + 1);
+    }
 
     private boolean isHtmlRequest(WebRequest request) {
         String acceptHeader = request.getHeader("Accept");

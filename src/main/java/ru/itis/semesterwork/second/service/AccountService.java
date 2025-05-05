@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
@@ -49,7 +50,7 @@ public class AccountService {
     }
 
     @Transactional
-    public String create(@Valid RegistrationRequest accountRequest) {
+    public String create(@Valid RegistrationRequest accountRequest, MultipartFile image) {
         if (accountRepository.existsByUsernameOrEmail(accountRequest.username(), accountRequest.email())) {
             throw new UsernameOrEmailConflictException(accountRequest.username(), accountRequest.email());
         }
@@ -57,9 +58,10 @@ public class AccountService {
         AccountEntity accountEntity = accountMapper.toEntity(accountRequest);
         accountEntity.setHashed_password(passwordEncoder.encode(accountRequest.password()));
 
-        if (accountRequest.hasIcon()) {
+        System.out.println(image == null);
+        if (image != null) {
             accountEntity.getAccountInfoEntity().setImageUrl(
-                    iconStorageService.store(accountRequest.icon(), accountRequest.username())
+                    iconStorageService.store(image, accountRequest.username())
             );
         }
 

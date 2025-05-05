@@ -1,8 +1,9 @@
 package ru.itis.semesterwork.second.api.rest;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
@@ -27,22 +28,26 @@ public interface AccountRestAPI {
     @ResponseStatus(HttpStatus.OK)
     AccountResponse findByUsername(@PathVariable("username") String username);
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    String create(@RequestPart RegistrationRequest request);
+    String createJson(@RequestBody RegistrationRequest request);
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    String createMultipart(@RequestPart RegistrationRequest data, @RequestPart(required = false) MultipartFile icon);
 
     @PutMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
     void updateByUsername(
             @PathVariable("username") String username,
-            @RequestBody AccountUpdateRequest request
+            @RequestBody AccountUpdateRequest data
     );
 
     @PatchMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
     void patchByUsername(
             @PathVariable("username") String username,
-            @RequestBody AccountUpdateRequest request
+            @RequestBody AccountUpdateRequest data
     );
 
     @DeleteMapping("/{username}")
