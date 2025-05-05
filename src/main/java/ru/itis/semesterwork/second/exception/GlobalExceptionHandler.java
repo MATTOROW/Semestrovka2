@@ -1,6 +1,7 @@
 package ru.itis.semesterwork.second.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
@@ -12,19 +13,18 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Для получения дефолтных атрибутов JSON при ошибке
     private final ErrorAttributes errorAttributes = new DefaultErrorAttributes();
 
     @ExceptionHandler(ServiceException.class)
     public Object handleServiceException(ServiceException ex, WebRequest request, HttpServletRequest httpRequest) {
         HttpStatus status = ex.getStatus();
 
-        // Если запрос с Accept text/html, то возвращаем страничку, иначе JSON
         if (isHtmlRequest(request)) {
             ModelAndView model = new ModelAndView("error");
             model.addObject("status", status.value());
@@ -47,6 +47,20 @@ public class GlobalExceptionHandler {
                 .status(ex.getStatus())
                 .body(errorAttributes);
     }
+
+//    @ExceptionHandler(ConstraintViolationException.class)
+//    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
+//        Map<String, String> errors = new LinkedHashMap<>();
+//        ex.getConstraintViolations().forEach(violation -> {
+//            String fieldName = getSimpleFieldName(violation.getPropertyPath().toString());
+//            errors.put(fieldName, violation.getMessage());
+//        });
+//        return ResponseEntity.badRequest().body(errors);
+//    }
+//
+//    private String getSimpleFieldName(String fullFieldPath) {
+//        return fullFieldPath.substring(fullFieldPath.lastIndexOf('.') + 1);
+//    }
 
     private boolean isHtmlRequest(WebRequest request) {
         String acceptHeader = request.getHeader("Accept");

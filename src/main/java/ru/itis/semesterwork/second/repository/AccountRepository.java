@@ -17,4 +17,8 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
     @Query("DELETE FROM AccountEntity acc WHERE acc.username = :username")
     @Modifying
     void deleteByUsername(@Param("username") String username);
+
+    Boolean existsByUsername(String username);
+    Boolean existsByEmail(String email);
+    Boolean existsByUsernameOrEmail(String username, String email);
 }

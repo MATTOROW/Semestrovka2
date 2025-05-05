@@ -1,14 +1,15 @@
 package ru.itis.semesterwork.second.api.rest;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.itis.semesterwork.second.dto.request.AccountRequest;
+import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
+import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 
 import java.util.List;
-import java.util.UUID;
 
 
 @RequestMapping("/api/v1/accounts")
@@ -28,15 +29,21 @@ public interface AccountRestAPI {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    UUID create(@RequestBody AccountRequest accountRequest);
+    String create(@RequestPart RegistrationRequest request);
 
     @PutMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
-    void updateByUsername(@PathVariable("username") String username, @RequestBody AccountRequest accountRequest);
+    void updateByUsername(
+            @PathVariable("username") String username,
+            @RequestBody AccountUpdateRequest request
+    );
 
     @PatchMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)
-    void patchByUsername(@PathVariable("username") String username, @RequestBody AccountRequest accountRequest);
+    void patchByUsername(
+            @PathVariable("username") String username,
+            @RequestBody AccountUpdateRequest request
+    );
 
     @DeleteMapping("/{username}")
     @ResponseStatus(HttpStatus.OK)

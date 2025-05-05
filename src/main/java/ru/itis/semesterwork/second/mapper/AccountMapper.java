@@ -3,7 +3,7 @@ package ru.itis.semesterwork.second.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import ru.itis.semesterwork.second.dto.request.AccountRequest;
+import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.model.AccountEntity;
@@ -15,7 +15,7 @@ public interface AccountMapper {
 
     @Mapping(target = "username", source = "username")
     @Mapping(target = "email", source = "email")
-    @Mapping(target = "hashed_password", source = "password")
+    @Mapping(target = "hashed_password", ignore = true)
     @Mapping(
             target = "accountInfoEntity.description",
             source = "description",
@@ -23,10 +23,9 @@ public interface AccountMapper {
     )
     @Mapping(
             target = "accountInfoEntity.imageUrl",
-            source = "imageUrl",
-            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+            ignore = true
     )
-    AccountEntity toEntity(AccountRequest accountRequest);
+    AccountEntity toEntity(RegistrationRequest accountRequest);
 
     @Mapping(target = "username", source = "username")
     @Mapping(

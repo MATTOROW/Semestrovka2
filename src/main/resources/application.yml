@@ -32,6 +32,7 @@ spring:
 server:
   servlet:
     context-path: /
+
   port: 8090
   error:
     include-stacktrace: never
@@ -42,3 +43,6 @@ server:
 springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+file:
+  icon-storage: uploaded/account-icons
