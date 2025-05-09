@@ -19,7 +19,7 @@ public class AccountInfoEntity {
     private String description;
 
     @Column(name = "image_url")
-    private String imageUrl;
+    private String iconUrl;
 
     @OneToOne
     @MapsId

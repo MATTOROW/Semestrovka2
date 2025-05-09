@@ -46,7 +46,7 @@
     <div class="flex flex-col items-center space-y-5">
         <!-- Аватарка с исправленной загрузкой изображения -->
         <div class="relative">
-            <div th:if="${account.imageUrl == null or account.imageUrl.isEmpty()}"
+            <div th:if="${account.iconUrl == null or account.iconUrl.isEmpty()}"
                  th:with="firstChar=${#strings.substring(account.username, 0, 1).toUpperCase()},
                           hue=${(T(java.lang.Math).abs(account.username.hashCode()) % 360)},
                           gradientColor1=${'hsl(' + hue + ', 70%, 45%)'},
@@ -55,8 +55,8 @@
                  th:style="'background: linear-gradient(135deg, ' + ${gradientColor1} + ' 0%, ' + ${gradientColor2} + ' 100%)'"
                  th:text="${firstChar}">
             </div>
-            <img th:unless="${account.imageUrl == null or account.imageUrl.isEmpty()}"
-                 th:src="@{'/images/' + ${account.imageUrl}}"
+            <img th:unless="${account.iconUrl == null or account.iconUrl.isEmpty()}"
+                 th:src="@{'/images/' + ${account.iconUrl}}"
                  alt="Profile image"
                  class="w-28 h-28 rounded-full object-cover border-2 border-white/10">
         </div>

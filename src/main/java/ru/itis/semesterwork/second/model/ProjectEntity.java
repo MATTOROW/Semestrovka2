@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -26,4 +28,7 @@ public class ProjectEntity {
 
     @Column(name = "inner_id", unique = true)
     private UUID innerId;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<ProjectMember> members = new HashSet<>();
 }

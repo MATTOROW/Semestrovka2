@@ -71,5 +71,6 @@ public interface AccountRestAPI {
 
     @GetMapping("/{username}/projects")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("@accountSecurityService.isOwner(#username)")
     List<ProjectResponse> getAllAccountProjects(@PathVariable("username") String username);
 }

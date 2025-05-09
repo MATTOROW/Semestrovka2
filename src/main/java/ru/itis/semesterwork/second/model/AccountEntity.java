@@ -5,9 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "account")
-@Getter@Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class AccountEntity {
 
@@ -24,8 +28,11 @@ public class AccountEntity {
     @Column(name = "password", length = 60, nullable = false)
     private String hashed_password;
 
-    @OneToOne(mappedBy = "accountEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "accountEntity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private AccountInfoEntity accountInfoEntity;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<ProjectMember> projects = new HashSet<>();
 
     public void setAccountInfoEntity(AccountInfoEntity accountInfoEntity) {
         this.accountInfoEntity = accountInfoEntity;

@@ -169,7 +169,7 @@
     </h1>
 
     <form id="profileForm" class="space-y-5">
-        <input type="hidden" id="currentUsername" th:value="${account.username}">
+        <input type="hidden" id="currentUsername" th:value="${currentUser.username}">
 
         <!-- Блок аватара с кнопками управления -->
         <div class="flex flex-col items-center space-y-1">
@@ -177,13 +177,13 @@
                 <div id="avatarContainer" class="avatar-container border-2 border-indigo-500/50">
                     <!-- Превью загруженного изображения -->
                     <img id="avatarImage" class="avatar-image w-full h-full object-cover"
-                         th:src="${account.imageUrl != null} ? @{'/images/' + ${account.imageUrl}} : ''"
+                         th:src="${currentUser.iconUrl != null} ? @{'/images/' + ${currentUser.iconUrl}} : ''"
                          style="display: none;">
 
                     <!-- Градиентный плейсхолдер -->
                     <div id="avatarPlaceholder" class="avatar-placeholder"
-                         th:style="'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(account.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(account.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
-                         th:text="${#strings.substring(account.username, 0, 1).toUpperCase()}">
+                         th:style="'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
+                         th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
                     </div>
 
                     <!-- Наложение для изменения -->
@@ -201,7 +201,7 @@
                 <button type="button" id="removeIconBtn" class="icon-btn remove-icon-btn">Remove Icon</button>
                 <button type="button" id="restoreIconBtn" class="icon-btn restore-icon-btn">Restore Icon</button>
             </div>
-            <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${account.imageUrl == null}">
+            <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${currentUser.iconUrl == null}">
                 Generated from your username
             </div>
         </div>
@@ -214,7 +214,7 @@
             <div>
                 <label for="username" class="block text-sm text-slate-300 mb-1.5">Username</label>
                 <input type="text" id="username" name="username" required
-                       th:value="${account.username}"
+                       th:value="${currentUser.username}"
                        class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
                 <div id="usernameError" class="text-xs text-rose-400 mt-1 hidden"></div>
             </div>
@@ -222,7 +222,7 @@
             <div>
                 <label for="description" class="block text-sm text-slate-300 mb-1.5">Description</label>
                 <textarea id="description" name="description" rows="3"
-                          th:text="${account.description}"
+                          th:text="${currentUser.description}"
                           class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"></textarea>
             </div>
         </div>
@@ -377,7 +377,7 @@
                 });
 
                 if (response.ok) {
-                    window.location.href = `/account`;
+                    window.location.href = `/account/view`;
                 } else {
                     const errorData = await response.json();
                     if (errorData.fields) {

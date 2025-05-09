@@ -28,18 +28,24 @@ public class SecurityContextHelper {
 
     public static UserDetailsImpl getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new SecurityException("User not authenticated");
+        if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserDetailsImpl)) {
+            return null;
         }
         return (UserDetailsImpl) auth.getPrincipal();
     }
 
     public static String getCurrentUsername() {
-        return getCurrentUser().getUsername();
+        if (getCurrentUser() != null) {
+            return getCurrentUser().getUsername();
+        }
+        return null;
     }
 
     public static String getCurrentUserPassword() {
-        return getCurrentUser().getPassword();
+        if (getCurrentUser() != null) {
+            return getCurrentUser().getPassword();
+        }
+        return null;
     }
 
     public static void updateCurrentUser(String username) {

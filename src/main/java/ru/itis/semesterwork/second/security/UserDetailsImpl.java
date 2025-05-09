@@ -1,5 +1,6 @@
 package ru.itis.semesterwork.second.security;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -8,6 +9,7 @@ import ru.itis.semesterwork.second.model.AccountEntity;
 import java.util.Collection;
 import java.util.List;
 
+@Getter
 @RequiredArgsConstructor
 public class UserDetailsImpl implements UserDetails {
     private final AccountEntity account;
@@ -25,5 +27,17 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public String getUsername() {
         return account.getUsername();
+    }
+
+    public String getEmail() {
+        return account.getEmail();
+    }
+
+    public String getDescription() {
+        return account.getAccountInfoEntity().getDescription();
+    }
+
+    public String getIconUrl() {
+        return account.getAccountInfoEntity().getIconUrl();
     }
 }

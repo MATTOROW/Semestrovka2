@@ -22,7 +22,7 @@ public interface AccountMapper {
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
     )
     @Mapping(
-            target = "accountInfoEntity.imageUrl",
+            target = "accountInfoEntity.iconUrl",
             ignore = true
     )
     AccountEntity toEntity(RegistrationRequest accountRequest);
@@ -33,8 +33,8 @@ public interface AccountMapper {
             source = "accountInfoEntity.description",
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(
-            target = "imageUrl",
-            source = "accountInfoEntity.imageUrl",
+            target = "iconUrl",
+            source = "accountInfoEntity.iconUrl",
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
     )
     AccountResponse toResponse(AccountEntity accountEntity);
@@ -46,8 +46,8 @@ public interface AccountMapper {
             source = "accountInfoEntity.description",
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(
-            target = "imageUrl",
-            source = "accountInfoEntity.imageUrl",
+            target = "iconUrl",
+            source = "accountInfoEntity.iconUrl",
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
     )
     AccountDetailedResponse toDetailedResponse(AccountEntity accountEntity);

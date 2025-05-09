@@ -16,11 +16,11 @@ import ru.itis.semesterwork.second.exception.CustomAccountNotFoundServiceExcepti
 import ru.itis.semesterwork.second.exception.UsernameConflictException;
 import ru.itis.semesterwork.second.exception.UsernameOrEmailConflictException;
 import ru.itis.semesterwork.second.mapper.AccountMapper;
+import ru.itis.semesterwork.second.mapper.ProjectMapper;
 import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +29,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
+    private final ProjectMapper projectMapper;
     private final PasswordEncoder passwordEncoder;
     private final IconStorageService iconStorageService;
 
@@ -60,7 +61,7 @@ public class AccountService {
         accountEntity.setHashed_password(passwordEncoder.encode(accountRequest.password()));
 
         if (image != null) {
-            accountEntity.getAccountInfoEntity().setImageUrl(
+            accountEntity.getAccountInfoEntity().setIconUrl(
                     iconStorageService.store(image, accountRequest.username())
             );
         }
@@ -88,19 +89,19 @@ public class AccountService {
         accountEntity.getAccountInfoEntity().setDescription(accountRequest.description());
 
         if (image != null && image.getSize() != 0) {
-            iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getImageUrl());
-            accountEntity.getAccountInfoEntity().setImageUrl(
+            iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getIconUrl());
+            accountEntity.getAccountInfoEntity().setIconUrl(
                     iconStorageService.store(image, accountRequest.username())
             );
         } else {
             if (accountRequest.deleteIcon()) {
-                iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getImageUrl());
-                accountEntity.getAccountInfoEntity().setImageUrl(null);
+                iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getIconUrl());
+                accountEntity.getAccountInfoEntity().setIconUrl(null);
             } else {
                 if (!username.equals(accountRequest.username())) {
-                    accountEntity.getAccountInfoEntity().setImageUrl(
+                    accountEntity.getAccountInfoEntity().setIconUrl(
                             iconStorageService.renameIcon(
-                                    accountEntity.getAccountInfoEntity().getImageUrl(),
+                                    accountEntity.getAccountInfoEntity().getIconUrl(),
                                     accountRequest.username()
                             )
                     );
@@ -128,6 +129,12 @@ public class AccountService {
     }
 
     public List<ProjectResponse> getAllAccountProjects(String username) {
-        return null;
+        AccountEntity accountEntity = accountRepository.findByUsername(username).orElseThrow(
+                () -> new CustomAccountNotFoundServiceException(username)
+        );
+
+        return accountEntity.getProjects().stream()
+                .map(member -> projectMapper.toResponse(member.getProject()))
+                .toList();
     }
 }
