@@ -97,6 +97,14 @@
         <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
         <span th:text="${isOwner ? 'Your active account' : 'Active account'}"></span>
     </div>
+
+    <!-- Кнопка редактирования (только для владельца) -->
+    <div th:if="${isOwner}" class="flex justify-center pt-4">
+        <a href="/account/edit"
+           class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200">
+            Edit Profile
+        </a>
+    </div>
 </div>
 </body>
 </html>
