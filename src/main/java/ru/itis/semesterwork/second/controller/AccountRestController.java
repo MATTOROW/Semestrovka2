@@ -47,14 +47,23 @@ public class AccountRestController implements AccountRestAPI {
     }
 
     @Override
-    public void updateByUsername(String username, AccountUpdateRequest data) {
-        accountService.updateByUsername(username, data);
+    public void updateByUsernameMultipart(String username, AccountUpdateRequest data, MultipartFile icon) {
+        accountService.updateByUsername(username, data, icon);
+
+        if (!username.equals(data.username())) {
+            SecurityContextHelper.updateCurrentUser(data.username());
+        }
     }
 
-    @Override
-    public void patchByUsername(String username, AccountUpdateRequest data) {
-        accountService.patchByUsername(username, data);
-    }
+//    @Override
+//    public void patchByUsernameJson(String username, AccountUpdateRequest data) {
+//        accountService.patchByUsername(username, data, null);
+//    }
+//
+//    @Override
+//    public void patchByUsernameMultipart(String username, AccountUpdateRequest data, MultipartFile icon) {
+//        accountService.patchByUsername(username, data, icon);
+//    }
 
     @Override
     public void deleteByUsername(String username) {

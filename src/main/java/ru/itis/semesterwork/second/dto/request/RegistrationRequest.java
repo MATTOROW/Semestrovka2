@@ -19,6 +19,7 @@ public record RegistrationRequest(
         @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
         String password,
 
+        @Size(min = 0, max = 1000)
         String description
 ) {
 

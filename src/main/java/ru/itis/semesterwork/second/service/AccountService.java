@@ -13,6 +13,7 @@ import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 import ru.itis.semesterwork.second.exception.CustomAccountNotFoundServiceException;
+import ru.itis.semesterwork.second.exception.UsernameConflictException;
 import ru.itis.semesterwork.second.exception.UsernameOrEmailConflictException;
 import ru.itis.semesterwork.second.mapper.AccountMapper;
 import ru.itis.semesterwork.second.model.AccountEntity;
@@ -58,7 +59,6 @@ public class AccountService {
         AccountEntity accountEntity = accountMapper.toEntity(accountRequest);
         accountEntity.setHashed_password(passwordEncoder.encode(accountRequest.password()));
 
-        System.out.println(image == null);
         if (image != null) {
             accountEntity.getAccountInfoEntity().setImageUrl(
                     iconStorageService.store(image, accountRequest.username())
@@ -69,14 +69,62 @@ public class AccountService {
     }
 
     @Transactional
-    public void updateByUsername(String username, @Valid AccountUpdateRequest accountRequest) {
+    public void updateByUsername(
+            String username,
+            @Valid AccountUpdateRequest accountRequest,
+            MultipartFile image
+    ) {
+        AccountEntity accountEntity = accountRepository.findByUsername(username).orElseThrow(
+                () -> new CustomAccountNotFoundServiceException(username)
+        );
+
+        if (!username.equals(accountRequest.username())) {
+            if (accountRepository.existsByUsername(accountRequest.username())) {
+                throw new UsernameConflictException(accountRequest.username());
+            }
+            accountEntity.setUsername(accountRequest.username());
+        }
+
+        accountEntity.getAccountInfoEntity().setDescription(accountRequest.description());
+
+        if (image != null && image.getSize() != 0) {
+            iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getImageUrl());
+            accountEntity.getAccountInfoEntity().setImageUrl(
+                    iconStorageService.store(image, accountRequest.username())
+            );
+        } else {
+            if (accountRequest.deleteIcon()) {
+                iconStorageService.deleteIcon(accountEntity.getAccountInfoEntity().getImageUrl());
+                accountEntity.getAccountInfoEntity().setImageUrl(null);
+            } else {
+                if (!username.equals(accountRequest.username())) {
+                    accountEntity.getAccountInfoEntity().setImageUrl(
+                            iconStorageService.renameIcon(
+                                    accountEntity.getAccountInfoEntity().getImageUrl(),
+                                    accountRequest.username()
+                            )
+                    );
+                }
+            }
+        }
+
+        accountRepository.flush();
+    }
+
+
+    @Transactional
+    public void patchByUsername(
+            String username,
+            @Valid AccountUpdateRequest accountRequest,
+            MultipartFile image
+    ) {
+
     }
 
     @Transactional
-    public void patchByUsername(String username, @Valid AccountUpdateRequest accountRequest) {}
-
-    @Transactional
     public void deleteByUsername(String username) {
+        iconStorageService.deleteIcon(accountRepository.getIconUrlByUsername(username));
+        accountRepository.deleteByUsername(username);
     }
 
     public List<ProjectResponse> getAllAccountProjects(String username) {

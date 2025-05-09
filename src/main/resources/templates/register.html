@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .register-card {
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .input-field {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.2s ease;
+        }
+        .input-field:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 1px #818cf8;
+        }
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            max-width: 24rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        .notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        .notification-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+<!-- Notification container -->
+<div id="notification" class="notification hidden">
+    <span id="notification-icon" class="notification-icon">✓</span>
+    <div>
+        <div id="notification-title" class="font-medium"></div>
+        <div id="notification-message" class="text-sm opacity-90"></div>
+        <ul id="notification-errors" class="mt-1 text-xs list-disc list-inside"></ul>
+    </div>
+</div>
+
+<div class="register-card rounded-2xl max-w-md w-full p-8 shadow-xl">
+    <h1 class="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent
+                   bg-gradient-to-r from-indigo-300 to-purple-400">
+        Create Account
+    </h1>
+
+    <form id="registerForm" class="space-y-4">
+
+        <!-- Username -->
+        <div>
+            <label for="username" class="block text-sm text-slate-300 mb-1.5">Username</label>
+            <input type="text" id="username" name="username" required
+                   class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"
+                   pattern="^[\p{L}0-9_-]{3,50}$"
+                   title="3-50 characters, letters, numbers, underscores or hyphens">
+            <div id="usernameError" class="text-xs text-rose-400 mt-1 hidden"></div>
+        </div>
+
+        <!-- Email -->
+        <div>
+            <label for="email" class="block text-sm text-slate-300 mb-1.5">Email</label>
+            <input type="email" id="email" name="email" required
+                   class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
+            <div id="emailError" class="text-xs text-rose-400 mt-1 hidden"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="relative">
+            <label for="password" class="block text-sm text-slate-300 mb-1.5">Password</label>
+            <input type="password" id="password" name="password" required
+                   minlength="6" maxlength="100"
+                   class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200 pr-10">
+            <span class="password-toggle" id="togglePassword">👁️</span>
+            <div id="passwordError" class="text-xs text-rose-400 mt-1 hidden"></div>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label for="description" class="block text-sm text-slate-300 mb-1.5">Description (optional)</label>
+            <textarea id="description" name="description" rows="3" maxlength="1000"
+                      class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"></textarea>
+            <div class="text-xs text-slate-400 mt-1">Max 1000 characters</div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700
+                                    text-white rounded-lg transition-colors mt-4">
+            Register
+        </button>
+
+        <!-- Login Link -->
+        <div class="text-center text-sm text-slate-400 mt-4">
+            Already have an account?
+            <a href="/login" class="text-indigo-300 hover:text-indigo-200">Sign in</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('registerForm');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        // Toggle password visibility
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+        });
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                description: document.getElementById('description').value
+            };
+
+            try {
+                const response = await fetch('/api/v1/accounts/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showNotification('Success', 'Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    const errorData = await response.json();
+                    if (errorData.fields) {
+                        handleValidationErrors(errorData.fields);
+                        showNotification('Validation Error', 'Please correct the form errors', 'error');
+                    } else {
+                        showNotification('Error', errorData.message || 'Registration failed', 'error');
+                    }
+                }
+            } catch (error) {
+                showNotification('Error', 'An unexpected error occurred', 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        function handleValidationErrors(fields) {
+            // Clear previous errors
+            document.querySelectorAll('[id$="Error"]').forEach(el => {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+
+            // Show new errors
+            for (const [field, error] of Object.entries(fields)) {
+                const errorElement = document.getElementById(`${field}Error`);
+                if (errorElement) {
+                    errorElement.textContent = error;
+                    errorElement.classList.remove('hidden');
+                }
+            }
+        }
+
+        function showNotification(title, message, type) {
+            const notification = document.getElementById('notification');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+            const notificationErrors = document.getElementById('notification-errors');
+
+            // Clear previous errors
+            notificationErrors.innerHTML = '';
+
+            // Set content
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+
+            // Set style based on type
+            notification.className = 'notification';
+            notification.classList.add(type);
+
+            // Show icon based on type
+            notificationIcon.textContent = type === 'success' ? '✓' : '✗';
+
+            // Show notification
+            notification.classList.remove('hidden');
+            notification.classList.add('show');
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.classList.add('hidden'), 300);
+            }, 5000);
+        }
+    });
+</script>
+</body>
+</html>

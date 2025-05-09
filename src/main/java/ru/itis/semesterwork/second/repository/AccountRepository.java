@@ -21,4 +21,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
     Boolean existsByUsernameOrEmail(String username, String email);
+
+    @Query("SELECT acc.accountInfoEntity.imageUrl FROM AccountEntity acc WHERE acc.username = :username")
+    String getIconUrlByUsername(@Param("username") String username);
 }

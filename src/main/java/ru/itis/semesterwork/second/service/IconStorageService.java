@@ -1,6 +1,7 @@
 package ru.itis.semesterwork.second.service;
 
 import jakarta.annotation.PostConstruct;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -49,18 +50,54 @@ public class IconStorageService {
 
     public String contentType(String iconUrl) {
         Path filePath = iconStoragePath.resolve(iconUrl);
-        try {
-            return Files.probeContentType(filePath);
-        } catch (IOException e) {
-            throw new IconServiceException();
+        if (Files.exists(filePath)) {
+            try {
+                return Files.probeContentType(filePath);
+            } catch (IOException e) {
+                throw new IconServiceException();
+            }
+        } else {
+            return null;
         }
     }
 
     public Resource loadIcon(String iconUrl) {
         Path filePath = iconStoragePath.resolve(iconUrl);
         try {
-            return new UrlResource(filePath.toUri());
+            Resource resource = new UrlResource(filePath.toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return resource;
+            } else {
+                return null;
+            }
         } catch (MalformedURLException e) {
+            throw new IconServiceException();
+        }
+    }
+
+    public String renameIcon(String oldIconUrl, String newName) {
+        System.out.println(oldIconUrl + " " + newName);
+        newName = "%s.%s".formatted(newName, FilenameUtils.getExtension(oldIconUrl));
+        Path filePath = iconStoragePath.resolve(oldIconUrl);
+        Path newPath = iconStoragePath.resolve(newName);
+        if (Files.exists(filePath)) {
+            try {
+                Files.move(filePath, newPath);
+            } catch (IOException e) {
+                throw new IconServiceException();
+            }
+        }
+        return newName;
+    }
+
+    public void deleteIcon(String iconUrl) {
+        if (iconUrl == null) {
+            return;
+        }
+        Path filePath = iconStoragePath.resolve(iconUrl);
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
             throw new IconServiceException();
         }
     }

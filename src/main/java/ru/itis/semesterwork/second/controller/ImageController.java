@@ -21,7 +21,7 @@ public class ImageController {
     @GetMapping("/images/{filename:.+}")
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
         Resource resource = iconStorageService.loadIcon(filename);
-        if (resource.exists() || resource.isReadable()) {
+        if (resource != null) {
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, iconStorageService.contentType(filename))
                     .body(resource);
