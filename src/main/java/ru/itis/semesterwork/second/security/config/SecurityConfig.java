@@ -40,9 +40,9 @@ public class SecurityConfig {
                         ).authenticated()
                         .anyRequest().authenticated()
                 )
-//                .sessionManagement(session -> session
-//                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-//                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                )
                 .exceptionHandling(
                         exception -> exception
                                 // если запрос в /api/** и неавторизован — вернём 401 без редиректа

@@ -122,33 +122,6 @@
         @keyframes spin {
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
-
-        .icon-controls {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-top: 0.5rem;
-        }
-        .icon-btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            border-radius: 0.375rem;
-            transition: all 0.2s;
-        }
-        .remove-icon-btn {
-            background-color: #ef4444;
-            color: white;
-        }
-        .remove-icon-btn:hover {
-            background-color: #dc2626;
-        }
-        .restore-icon-btn {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .restore-icon-btn:hover {
-            background-color: #2563eb;
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -171,7 +144,7 @@
     <form id="profileForm" class="space-y-5">
         <input type="hidden" id="currentUsername" th:value="${currentUser.username}">
 
-        <!-- Блок аватара с кнопками управления -->
+        <!-- Блок аватара -->
         <div class="flex flex-col items-center space-y-1">
             <label class="avatar-label cursor-pointer relative">
                 <div id="avatarContainer" class="avatar-container border-2 border-indigo-500/50">
@@ -189,25 +162,15 @@
                     <!-- Наложение для изменения -->
                     <div class="avatar-overlay">
                         <span class="text-white text-center text-sm bg-black/50 px-2 py-1 rounded">
-                            Change photo
+                            View photo
                         </span>
                     </div>
                 </div>
-                <input type="file" id="avatarInput" name="icon" accept="image/*" class="hidden">
             </label>
-
-            <!-- Кнопки управления иконкой -->
-            <div id="iconControls" class="icon-controls" style="display: none;">
-                <button type="button" id="removeIconBtn" class="icon-btn remove-icon-btn">Remove Icon</button>
-                <button type="button" id="restoreIconBtn" class="icon-btn restore-icon-btn">Restore Icon</button>
-            </div>
             <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${currentUser.iconUrl == null}">
                 Generated from your username
             </div>
         </div>
-
-        <!-- Скрытое поле для управления удалением иконки -->
-        <input type="hidden" id="deleteIcon" name="deleteIcon" value="false">
 
         <!-- Поля формы -->
         <div class="space-y-4">
@@ -249,103 +212,21 @@
         const avatarImage = document.getElementById('avatarImage');
         const avatarPlaceholder = document.getElementById('avatarPlaceholder');
         const defaultIconNote = document.getElementById('defaultIconNote');
-        const avatarInput = document.getElementById('avatarInput');
         const descriptionInput = document.getElementById('description');
         const submitBtn = document.getElementById('submitBtn');
-        const iconControls = document.getElementById('iconControls');
 
-        // Кнопки управления
-        const removeIconBtn = document.getElementById('removeIconBtn');
-        const restoreIconBtn = document.getElementById('restoreIconBtn');
-        const deleteIconField = document.getElementById('deleteIcon');
-
-        // Состояние
-        let originalImageUrl = avatarImage.src !== window.location.href ? avatarImage.src : null;
-
-        console.log(avatarImage.src)
-        let currentState = {
-            hasImage: originalImageUrl !== null,
-            isRemoved: false,
-            isNewImage: false
-        };
-
-        // Инициализация превью
+        // Инициализация превью аватара
         function initAvatarPreview() {
-            if (currentState.hasImage && !currentState.isRemoved) {
+            if (avatarImage.src && avatarImage.src !== window.location.href) {
                 avatarImage.style.display = 'block';
                 avatarPlaceholder.style.display = 'none';
                 if (defaultIconNote) defaultIconNote.style.display = 'none';
-                removeIconBtn.style.display = originalImageUrl !== null ? 'block' : 'none';
-                restoreIconBtn.style.display = currentState.isNewImage ? 'block' : 'none';
             } else {
                 avatarImage.style.display = 'none';
                 avatarPlaceholder.style.display = 'flex';
                 if (defaultIconNote) defaultIconNote.style.display = 'block';
-                removeIconBtn.style.display = currentState.isNewImage ? 'block' : 'none';
-                restoreIconBtn.style.display = originalImageUrl === null ? 'none' : 'block';
             }
-            iconControls.style.display = 'flex';
         }
-
-        // Обработчик кнопки "Remove Icon"
-        removeIconBtn.addEventListener('click', function() {
-            deleteIconField.value = "true";
-            currentState.isRemoved = true;
-            currentState.isNewImage = false;
-
-            initAvatarPreview();
-            avatarInput.value = '';
-            showNotification('Info', 'Icon will be removed after saving', 'success');
-        });
-
-        // Обработчик кнопки "Restore Icon"
-        restoreIconBtn.addEventListener('click', function() {
-            deleteIconField.value = "false";
-            currentState.isRemoved = false;
-            currentState.isNewImage = false;
-
-            if (originalImageUrl) {
-                avatarImage.src = originalImageUrl;
-                currentState.hasImage = true;
-            } else {
-                currentState.hasImage = false;
-            }
-
-            initAvatarPreview();
-            avatarInput.value = '';
-            showNotification('Info', 'Original icon restored', 'success');
-        });
-
-        // Обработчик изменения файла
-        avatarInput.addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-
-                // Проверка размера файла (10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    showNotification('Error', 'File size exceeds 10MB limit', 'error');
-                    this.value = '';
-                    return;
-                }
-
-                // Проверка типа файла
-                if (!file.type.match('image.*')) {
-                    showNotification('Error', 'Please select an image file (JPEG, PNG, etc.)', 'error');
-                    this.value = '';
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    avatarImage.src = event.target.result;
-                    currentState.hasImage = true;
-                    currentState.isNewImage = true;
-                    currentState.isRemoved = false;
-                    initAvatarPreview();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
 
         // Инициализация при загрузке
         initAvatarPreview();
@@ -356,24 +237,18 @@
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-            const formData = new FormData();
             const updateData = {
                 username: usernameInput.value,
-                description: descriptionInput.value,
-                deleteIcon: deleteIconField.value === "true"
+                description: descriptionInput.value
             };
 
-            const jsonBlob = new Blob([JSON.stringify(updateData)], { type: 'application/json' });
-            formData.append('data', jsonBlob);
-
-            if (avatarInput.files[0]) {
-                formData.append('icon', avatarInput.files[0]);
-            }
-
             try {
-                const response = await fetch(`/api/v1/accounts/update/${currentUsername}`, {
-                    method: 'PUT',
-                    body: formData
+                const response = await fetch(`/api/v1/accounts/${currentUsername}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
                 });
 
                 if (response.ok) {

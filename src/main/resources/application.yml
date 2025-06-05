@@ -43,7 +43,7 @@ server:
   port: 8090
   error:
     include-stacktrace: never
-    include-message: always
+    include-message: never
     whitelabel:
       enabled: false
 

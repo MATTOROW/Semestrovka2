@@ -1,12 +1,13 @@
 package ru.itis.semesterwork.second.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
+import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
 import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.AccountResponse;
 import ru.itis.semesterwork.second.model.AccountEntity;
+
+import java.util.Optional;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
@@ -18,8 +19,7 @@ public interface AccountMapper {
     @Mapping(target = "hashed_password", ignore = true)
     @Mapping(
             target = "accountInfoEntity.description",
-            source = "description",
-            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+            ignore = true
     )
     @Mapping(
             target = "accountInfoEntity.iconUrl",
@@ -51,4 +51,17 @@ public interface AccountMapper {
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
     )
     AccountDetailedResponse toDetailedResponse(AccountEntity accountEntity);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "description", target = "accountInfoEntity.description")
+    void updateAccountEntity(AccountUpdateRequest request, @MappingTarget AccountEntity accountEntity);
+
+    @Condition
+    default boolean isPresent(Optional<?> optional) {
+        return optional.isPresent();
+    }
+
+    default String mapOptionalToString(Optional<String> optional) {
+        return optional.orElse(null);
+    }
 }

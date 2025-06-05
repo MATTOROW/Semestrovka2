@@ -1,9 +1,9 @@
-package ru.itis.semesterwork.second.controller;
+package ru.itis.semesterwork.second.controller.rest;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.ProjectRestAPI;
-import ru.itis.semesterwork.second.dto.request.ProjectRequest;
+import ru.itis.semesterwork.second.dto.request.CreateProjectRequest;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
 import ru.itis.semesterwork.second.service.ProjectService;
 
@@ -27,17 +27,22 @@ public class ProjectRestController implements ProjectRestAPI {
     }
 
     @Override
-    public UUID create(ProjectRequest projectRequest) {
-        return projectService.create(projectRequest);
+    public UUID create(CreateProjectRequest createProjectRequest) {
+        return projectService.create(createProjectRequest);
     }
 
     @Override
-    public void updateByInnerId(UUID innerId, ProjectRequest projectRequest) {
-        projectService.updateByInnerId(innerId, projectRequest);
+    public void updateByInnerId(UUID innerId, CreateProjectRequest createProjectRequest) {
+        projectService.updateByInnerId(innerId, createProjectRequest);
     }
 
     @Override
     public void deleteByInnerId(UUID innerId) {
         projectService.deleteByInnerId(innerId);
+    }
+
+    @Override
+    public List<ProjectResponse> getAllAccountProjects(String username) {
+        return projectService.getAllProjectsByUsername(username);
     }
 }
