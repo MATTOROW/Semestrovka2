@@ -1,0 +1,75 @@
+<!-- templates/fragments/navbar.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:x-transition="http://www.w3.org/1999/xhtml"
+      th:fragment="navbar">
+<nav class="navbar fixed top-0 left-0 right-0 z-50 px-6 py-3 flex items-center justify-between">
+    <!-- Лого и навигация -->
+    <div class="flex items-center space-x-6">
+        <a href="/" class="text-xl font-semibold bg-clip-text text-transparent
+                           bg-gradient-to-r from-indigo-300 to-purple-400">
+            Rello 2.0
+        </a>
+        <a href="/projects" class="text-slate-300 hover:text-indigo-300 transition-colors">
+            Projects
+        </a>
+    </div>
+
+    <!-- Блок авторизации -->
+    <div th:if="${currentUser != null}" class="relative" x-data="{ open: false }">
+        <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+            <div class="w-8 h-8 rounded-full overflow-hidden relative">
+                <img th:if="${currentUser.iconUrl != null}"
+                     th:src="@{'/images/' + ${currentUser.iconUrl}}"
+                     class="w-full h-full object-cover">
+
+                <div th:unless="${currentUser.iconUrl != null}"
+                     class="w-full h-full absolute inset-0 flex items-center justify-center nav-avatar-placeholder"
+                     th:with="firstChar=${#strings.substring(currentUser.username, 0, 1).toUpperCase()},
+                              hue=${(T(java.lang.Math).abs(currentUser.username.hashCode()) % 360)},
+                              gradientColor1=${'hsl(' + hue + ', 70%, 45%)'},
+                              gradientColor2=${'hsl(' + ((hue + 30) % 360) + ', 70%, 60%)'}"
+                     th:style="'background: linear-gradient(135deg, ' + ${gradientColor1} + ' 0%, ' + ${gradientColor2} + ' 100%)'"
+                     th:text="${firstChar}">
+                </div>
+            </div>
+
+            <span class="text-slate-300" th:text="${currentUser.username}"></span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400"
+                 :class="{ 'transform rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0
+                      01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+
+        <div x-show="open" @click.away="open = false"
+             class="dropdown-menu absolute right-0 mt-2 w-48 rounded-md overflow-hidden py-1 z-50"
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="transform opacity-0 scale-95"
+             x-transition:enter-end="transform opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="transform opacity-100 scale-100"
+             x-transition:leave-end="transform opacity-0 scale-95">
+            <a href="/account/view" class="dropdown-item block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                View Account
+            </a>
+            <a href="/account/edit" class="dropdown-item block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                Edit Account
+            </a>
+            <div class="border-t border-slate-700 my-1"></div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="dropdown-item block w-full text-left px-4 py-2 text-sm
+                                               text-slate-300 hover:text-white">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Кнопки входа -->
+    <div th:unless="${currentUser != null}" class="flex space-x-4">
+        <a href="/login" class="text-slate-300 hover:text-indigo-300">Login</a>
+        <a href="/register" class="text-indigo-300 hover:text-indigo-200">Register</a>
+    </div>
+</nav>
+</html>

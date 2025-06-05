@@ -41,4 +41,10 @@ public class AccountController {
         model.addAttribute("account", SecurityContextHelper.getCurrentUser());
         return "account-edit";
     }
+
+    @GetMapping("/navbar")
+    public String navbar(Model model) {
+        model.addAttribute("account", SecurityContextHelper.getCurrentUser());
+        return "navbar";
+    }
 }

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="/css/navbar.css">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         body {
@@ -124,84 +126,89 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-<!-- Notification container -->
-<div id="notification" class="notification hidden">
-    <span id="notification-icon" class="notification-icon">✓</span>
-    <div>
-        <div id="notification-title" class="font-medium"></div>
-        <div id="notification-message" class="text-sm opacity-90"></div>
-        <ul id="notification-errors" class="mt-1 text-xs list-disc list-inside"></ul>
+<body class="min-h-screen">
+
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<main id="content" class="min-h-screen flex items-center justify-center p-4">
+    <!-- Notification container -->
+    <div id="notification" class="notification hidden">
+        <span id="notification-icon" class="notification-icon">✓</span>
+        <div>
+            <div id="notification-title" class="font-medium"></div>
+            <div id="notification-message" class="text-sm opacity-90"></div>
+            <ul id="notification-errors" class="mt-1 text-xs list-disc list-inside"></ul>
+        </div>
     </div>
-</div>
 
-<div class="profile-card rounded-2xl max-w-md w-full p-8 shadow-xl">
-    <h1 class="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent
+    <div class="profile-card rounded-2xl max-w-md w-full p-8 shadow-xl">
+        <h1 class="text-2xl font-bold text-center mb-6 bg-clip-text text-transparent
                    bg-gradient-to-r from-indigo-300 to-purple-400">
-        Edit Profile
-    </h1>
+            Edit Profile
+        </h1>
 
-    <form id="profileForm" class="space-y-5">
-        <input type="hidden" id="currentUsername" th:value="${currentUser.username}">
+        <form id="profileForm" class="space-y-5">
+            <input type="hidden" id="currentUsername" th:value="${currentUser.username}">
 
-        <!-- Блок аватара -->
-        <div class="flex flex-col items-center space-y-1">
-            <label class="avatar-label cursor-pointer relative">
-                <div id="avatarContainer" class="avatar-container border-2 border-indigo-500/50">
-                    <!-- Превью загруженного изображения -->
-                    <img id="avatarImage" class="avatar-image w-full h-full object-cover"
-                         th:src="${currentUser.iconUrl != null} ? @{'/images/' + ${currentUser.iconUrl}} : ''"
-                         style="display: none;">
+            <!-- Блок аватара -->
+            <div class="flex flex-col items-center space-y-1">
+                <label class="avatar-label cursor-pointer relative">
+                    <div id="avatarContainer" class="avatar-container border-2 border-indigo-500/50">
+                        <!-- Превью загруженного изображения -->
+                        <img id="avatarImage" class="avatar-image w-full h-full object-cover"
+                             th:src="${currentUser.iconUrl != null} ? @{'/images/' + ${currentUser.iconUrl}} : ''"
+                             style="display: none;">
 
-                    <!-- Градиентный плейсхолдер -->
-                    <div id="avatarPlaceholder" class="avatar-placeholder"
-                         th:style="'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
-                         th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
-                    </div>
+                        <!-- Градиентный плейсхолдер -->
+                        <div id="avatarPlaceholder" class="avatar-placeholder"
+                             th:style="'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
+                             th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
+                        </div>
 
-                    <!-- Наложение для изменения -->
-                    <div class="avatar-overlay">
+                        <!-- Наложение для изменения -->
+                        <div class="avatar-overlay">
                         <span class="text-white text-center text-sm bg-black/50 px-2 py-1 rounded">
                             View photo
                         </span>
+                        </div>
                     </div>
+                </label>
+                <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${currentUser.iconUrl == null}">
+                    Generated from your username
                 </div>
-            </label>
-            <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${currentUser.iconUrl == null}">
-                Generated from your username
-            </div>
-        </div>
-
-        <!-- Поля формы -->
-        <div class="space-y-4">
-            <div>
-                <label for="username" class="block text-sm text-slate-300 mb-1.5">Username</label>
-                <input type="text" id="username" name="username" required
-                       th:value="${currentUser.username}"
-                       class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
-                <div id="usernameError" class="text-xs text-rose-400 mt-1 hidden"></div>
             </div>
 
-            <div>
-                <label for="description" class="block text-sm text-slate-300 mb-1.5">Description</label>
-                <textarea id="description" name="description" rows="3"
-                          th:text="${currentUser.description}"
-                          class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"></textarea>
-            </div>
-        </div>
+            <!-- Поля формы -->
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm text-slate-300 mb-1.5">Username</label>
+                    <input type="text" id="username" name="username" required
+                           th:value="${currentUser.username}"
+                           class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
+                    <div id="usernameError" class="text-xs text-rose-400 mt-1 hidden"></div>
+                </div>
 
-        <!-- Кнопки -->
-        <div class="flex justify-end space-x-3 pt-3">
-            <a href="/account" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
-                Cancel
-            </a>
-            <button type="submit" id="submitBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                <div>
+                    <label for="description" class="block text-sm text-slate-300 mb-1.5">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              th:text="${currentUser.description}"
+                              class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"></textarea>
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="flex justify-end space-x-3 pt-3">
+                <a href="/account" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" id="submitBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
                                             text-white rounded-lg transition-colors">
-                Save Changes
-            </button>
-        </div>
-    </form>
-</div>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

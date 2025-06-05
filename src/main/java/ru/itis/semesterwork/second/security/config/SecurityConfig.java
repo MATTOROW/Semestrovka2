@@ -1,5 +1,6 @@
 package ru.itis.semesterwork.second.security.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -14,11 +15,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import ru.itis.semesterwork.second.security.service.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -51,7 +56,19 @@ public class SecurityConfig {
                                         new AntPathRequestMatcher("/api/**")
                                 )
                 )
-                .httpBasic(Customizer.withDefaults())   ;
+                .httpBasic(Customizer.withDefaults())
+                .rememberMe(remember -> remember
+                    .key("Ahsase213_dadd3AAd__da123ff")
+                    .rememberMeParameter("remember-me")
+                    .tokenValiditySeconds(3 * 24 * 60 * 60)
+                    .userDetailsService(userDetailsService)
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID", "remember-me")
+                );
 
         return http.build();
     }
