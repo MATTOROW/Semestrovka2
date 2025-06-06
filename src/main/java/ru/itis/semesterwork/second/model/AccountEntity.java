@@ -28,15 +28,15 @@ public class AccountEntity {
     @Column(name = "password", length = 60, nullable = false)
     private String hashed_password;
 
-    @OneToOne(mappedBy = "accountEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private AccountInfoEntity accountInfoEntity;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<ProjectMember> projects = new HashSet<>();
+    private Set<ProjectMemberEntity> projects = new HashSet<>();
 
     public void setAccountInfoEntity(AccountInfoEntity accountInfoEntity) {
         this.accountInfoEntity = accountInfoEntity;
-        accountInfoEntity.setAccountEntity(this);
+        accountInfoEntity.setAccount(this);
     }
 
     @Override

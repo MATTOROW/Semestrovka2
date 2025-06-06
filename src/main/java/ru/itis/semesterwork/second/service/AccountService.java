@@ -29,6 +29,8 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
     private final IconStorageService iconStorageService;
+    private final ProjectService projectService;
+    private final ProjectMemberService projectMemberService;
 
     public AccountResponse findByUsername(String username) {
         return accountMapper.toResponse(
@@ -79,6 +81,8 @@ public class AccountService {
     public void deleteByUsername(String username) {
         iconStorageService.deleteIcon(accountRepository.getIconUrlByUsername(username));
         accountRepository.deleteByUsername(username);
+        projectService.deleteAllWhereAccountOwner(username);
+        projectMemberService.deleteAllByAccountUsername(username);
     }
 
     public Page<AccountResponse> findAllByContainsUsernameIgnoreCase(String usernamePart, Pageable pageable) {

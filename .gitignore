@@ -50,7 +50,7 @@ cmake-build-*/
 # Mongo Explorer plugin
 .idea/**/mongoSettings.xml
 
-# File-based project format
+# File-based projectEntity format
 *.iws
 
 # IntelliJ
@@ -130,7 +130,7 @@ buildNumber.properties
 
 # Eclipse m2e generated files
 # Eclipse Core
-.project
+.projectEntity
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 

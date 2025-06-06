@@ -1,10 +1,10 @@
 package ru.itis.semesterwork.second.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -13,22 +13,51 @@ import java.util.UUID;
 @Table(name = "project")
 @Getter
 @Setter
-@NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProjectEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", length = 50, nullable = false)
+    @Builder.Default
+    @Column(nullable = false, unique = true, updatable = false)
+    private UUID innerId = UUID.randomUUID();
+
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "inner_id", unique = true)
-    private UUID innerId;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<ProjectMember> members = new HashSet<>();
+    @Builder.Default
+    private Set<ProjectMemberEntity> members = new HashSet<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<CategoryEntity> categories = new HashSet<>();
+
+    public void addMember(ProjectMemberEntity member) {
+        members.add(member);
+        member.setProject(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProjectEntity projectEntity = (ProjectEntity) o;
+        return innerId.equals(projectEntity.innerId);
+    }
+
+    @Override
+    public int hashCode() {
+        return innerId.hashCode();
+    }
 }

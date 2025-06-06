@@ -24,6 +24,6 @@ public class AccountInfoEntity {
     @OneToOne
     @MapsId
     @JoinColumn(name = "account_id")
-    private AccountEntity accountEntity;
+    private AccountEntity account;
 
 }

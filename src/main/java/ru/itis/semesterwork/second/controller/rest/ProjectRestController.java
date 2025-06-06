@@ -1,48 +1,56 @@
 package ru.itis.semesterwork.second.controller.rest;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.ProjectRestAPI;
 import ru.itis.semesterwork.second.dto.request.CreateProjectRequest;
+import ru.itis.semesterwork.second.dto.request.UpdateProjectRequest;
+import ru.itis.semesterwork.second.dto.response.PageResponse;
 import ru.itis.semesterwork.second.dto.response.ProjectResponse;
+import ru.itis.semesterwork.second.dto.response.ProjectShortResponse;
 import ru.itis.semesterwork.second.service.ProjectService;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ProjectRestController implements ProjectRestAPI {
 
     private final ProjectService projectService;
 
     @Override
-    public List<ProjectResponse> getAllProjects() {
-        return projectService.getAllProjects();
+    public UUID createProject(CreateProjectRequest request) {
+        return projectService.create(request);
     }
 
     @Override
-    public ProjectResponse findByInnerId(UUID innerId) {
-        return projectService.findByInnerId(innerId);
+    @PreAuthorize("@projectSecurity.isMember(#projectId)")
+    public ProjectResponse getProject(UUID projectId) {
+        return projectService.getByInnerId(projectId);
     }
 
     @Override
-    public UUID create(CreateProjectRequest createProjectRequest) {
-        return projectService.create(createProjectRequest);
+    @PreAuthorize("@projectSecurity.isOwner(#projectId)")
+    public void updateProject(UUID projectId, UpdateProjectRequest request) {
+        projectService.updateByInnerId(projectId, request);
     }
 
     @Override
-    public void updateByInnerId(UUID innerId, CreateProjectRequest createProjectRequest) {
-        projectService.updateByInnerId(innerId, createProjectRequest);
+    @PreAuthorize("@projectSecurity.isOwner(#projectId)")
+    public void deleteProject(UUID projectId) {
+        projectService.deleteByInnerId(projectId);
     }
 
     @Override
-    public void deleteByInnerId(UUID innerId) {
-        projectService.deleteByInnerId(innerId);
+    public PageResponse<ProjectShortResponse> getUserProjects(String search, Pageable pageable) {
+        return projectService.getUserProjects(search, pageable);
     }
 
     @Override
-    public List<ProjectResponse> getAllAccountProjects(String username) {
-        return projectService.getAllProjectsByUsername(username);
+    public List<String> getRoles() {
+        return projectService.getRoles();
     }
 }

@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
-public record ProjectResponse(
+public record ProjectShortResponse(
         @Schema(description = "UUID проекта")
         UUID id,
 
@@ -16,8 +16,5 @@ public record ProjectResponse(
         String description,
 
         @Schema(description = "Дата создания")
-        Instant createdAt,
-
-        @Schema(description = "Роль текущего пользователя в проекте")
-        String currentUserRole
+        Instant createdAt
 ) {}
