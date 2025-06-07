@@ -1,11 +1,12 @@
 package ru.itis.semesterwork.second.mapper;
 
 import org.mapstruct.*;
-import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
-import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
-import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
-import ru.itis.semesterwork.second.dto.response.AccountResponse;
+import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
+import ru.itis.semesterwork.second.dto.request.auth.RegistrationRequest;
+import ru.itis.semesterwork.second.dto.response.account.AccountDetailedResponse;
+import ru.itis.semesterwork.second.dto.response.account.AccountResponse;
 import ru.itis.semesterwork.second.model.AccountEntity;
+import ru.itis.semesterwork.second.validation.model.NullableField;
 
 import java.util.Optional;
 
@@ -57,11 +58,11 @@ public interface AccountMapper {
     void updateAccountEntity(AccountUpdateRequest request, @MappingTarget AccountEntity accountEntity);
 
     @Condition
-    default boolean isPresent(Optional<?> optional) {
+    default boolean isPresent(NullableField<?> optional) {
         return optional.isPresent();
     }
 
-    default String mapOptionalToString(Optional<String> optional) {
-        return optional.orElse(null);
+    default String mapOptionalToString(NullableField<String> optional) {
+        return optional.value();
     }
 }

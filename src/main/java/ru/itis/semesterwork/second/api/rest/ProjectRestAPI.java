@@ -9,11 +9,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.itis.semesterwork.second.dto.request.CreateProjectRequest;
-import ru.itis.semesterwork.second.dto.request.UpdateProjectRequest;
-import ru.itis.semesterwork.second.dto.response.PageResponse;
-import ru.itis.semesterwork.second.dto.response.ProjectResponse;
-import ru.itis.semesterwork.second.dto.response.ProjectShortResponse;
+import ru.itis.semesterwork.second.dto.request.project.CreateProjectRequest;
+import ru.itis.semesterwork.second.dto.request.project.UpdateProjectRequest;
+import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
+import ru.itis.semesterwork.second.dto.response.project.ProjectResponse;
+import ru.itis.semesterwork.second.dto.response.project.ProjectShortResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -70,7 +70,7 @@ public interface ProjectRestAPI {
             @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
     })
     @GetMapping("/my")
-    PageResponse<ProjectShortResponse> getUserProjects(
+    CustomPageResponseDto<ProjectShortResponse> getUserProjects(
             @RequestParam(defaultValue = "") String search,
             @PageableDefault(
                     sort = "project.name",

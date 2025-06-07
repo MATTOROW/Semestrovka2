@@ -2,12 +2,10 @@ package ru.itis.semesterwork.second.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
-import ru.itis.semesterwork.second.security.UserDetailsImpl;
+import ru.itis.semesterwork.second.dto.response.account.AccountDetailedResponse;
 import ru.itis.semesterwork.second.service.AccountService;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
 

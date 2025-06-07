@@ -2,7 +2,7 @@ package ru.itis.semesterwork.second.validation.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import ru.itis.semesterwork.second.dto.request.DeleteCategoryWrapper;
+import ru.itis.semesterwork.second.dto.request.category.DeleteCategoryWrapper;
 import ru.itis.semesterwork.second.validation.annotation.CategoryChangeValid;
 
 public class CategoryChangeValidator implements ConstraintValidator<CategoryChangeValid, DeleteCategoryWrapper> {

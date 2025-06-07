@@ -1,16 +1,14 @@
 package ru.itis.semesterwork.second.api.rest;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.itis.semesterwork.second.dto.request.CreateCategoryRequest;
-import ru.itis.semesterwork.second.dto.request.DeleteCategoryRequest;
-import ru.itis.semesterwork.second.dto.request.UpdateCategoryRequest;
-import ru.itis.semesterwork.second.dto.response.CategoryResponse;
+import ru.itis.semesterwork.second.dto.request.category.CreateCategoryRequest;
+import ru.itis.semesterwork.second.dto.request.category.DeleteCategoryRequest;
+import ru.itis.semesterwork.second.dto.request.category.UpdateCategoryRequest;
+import ru.itis.semesterwork.second.dto.response.category.CategoryResponse;
 
 import java.util.List;
 import java.util.UUID;

@@ -8,9 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.itis.semesterwork.second.dto.request.AddMemberRequest;
-import ru.itis.semesterwork.second.dto.request.UpdateMemberRoleRequest;
-import ru.itis.semesterwork.second.dto.response.ProjectMemberResponse;
+import ru.itis.semesterwork.second.dto.request.projectmember.AddMemberRequest;
+import ru.itis.semesterwork.second.dto.request.projectmember.UpdateMemberRoleRequest;
+import ru.itis.semesterwork.second.dto.response.projectmember.ProjectMemberResponse;
 
 import java.util.List;
 import java.util.UUID;

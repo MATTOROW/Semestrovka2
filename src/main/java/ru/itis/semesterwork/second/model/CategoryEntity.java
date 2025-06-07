@@ -3,6 +3,8 @@ package ru.itis.semesterwork.second.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +27,10 @@ public class CategoryEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<TaskEntity> tasks = new HashSet<>();
 
     @Column(nullable = false)
     private String name;

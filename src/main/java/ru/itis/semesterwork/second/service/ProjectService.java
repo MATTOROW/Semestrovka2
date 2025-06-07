@@ -7,11 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import ru.itis.semesterwork.second.dto.request.CreateProjectRequest;
-import ru.itis.semesterwork.second.dto.request.UpdateProjectRequest;
-import ru.itis.semesterwork.second.dto.response.PageResponse;
-import ru.itis.semesterwork.second.dto.response.ProjectResponse;
-import ru.itis.semesterwork.second.dto.response.ProjectShortResponse;
+import ru.itis.semesterwork.second.dto.request.project.CreateProjectRequest;
+import ru.itis.semesterwork.second.dto.request.project.UpdateProjectRequest;
+import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
+import ru.itis.semesterwork.second.dto.response.project.ProjectResponse;
+import ru.itis.semesterwork.second.dto.response.project.ProjectShortResponse;
 import ru.itis.semesterwork.second.exception.ProjectNotFoundException;
 import ru.itis.semesterwork.second.mapper.ProjectMapper;
 import ru.itis.semesterwork.second.model.AccountEntity;
@@ -86,13 +86,13 @@ public class ProjectService {
         projectRepository.deleteAll(projects);
     }
 
-    public PageResponse<ProjectShortResponse> getUserProjects(String search, Pageable page) {
+    public CustomPageResponseDto<ProjectShortResponse> getUserProjects(String search, Pageable page) {
         String username = SecurityContextHelper.getCurrentUser().getAccount().getUsername();
         String name = search == null ? "" : search;
         Page<ProjectShortResponse> response = projectMemberRepository
                 .findAllWithProjectsByAccountUsernameAndProjectNameContainsIgnoreCase(username, page, name)
                 .map(member -> projectMapper.toShortResponse(member.getProject()));
-        return new PageResponse<ProjectShortResponse>(
+        return new CustomPageResponseDto<>(
                 response.getNumber(),
                 response.getSize(),
                 response.getTotalElements(),

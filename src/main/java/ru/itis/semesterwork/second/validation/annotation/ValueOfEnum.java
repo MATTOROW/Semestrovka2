@@ -9,11 +9,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValueOfEnumValidator.class)
 public @interface ValueOfEnum {
     Class<? extends Enum<?>> enumClass();
+    String[] exclude() default {};
     String message() default "must be any of: {acceptedValues}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};

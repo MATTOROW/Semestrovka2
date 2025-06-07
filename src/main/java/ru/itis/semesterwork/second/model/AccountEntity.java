@@ -1,9 +1,7 @@
 package ru.itis.semesterwork.second.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,7 +10,8 @@ import java.util.Set;
 @Table(name = "account")
 @Getter
 @Setter
-@NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class AccountEntity {
 
     @Id

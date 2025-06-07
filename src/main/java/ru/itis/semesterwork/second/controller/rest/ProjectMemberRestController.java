@@ -3,9 +3,9 @@ package ru.itis.semesterwork.second.controller.rest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.ProjectMemberRestAPI;
-import ru.itis.semesterwork.second.dto.request.AddMemberRequest;
-import ru.itis.semesterwork.second.dto.request.UpdateMemberRoleRequest;
-import ru.itis.semesterwork.second.dto.response.ProjectMemberResponse;
+import ru.itis.semesterwork.second.dto.request.projectmember.AddMemberRequest;
+import ru.itis.semesterwork.second.dto.request.projectmember.UpdateMemberRoleRequest;
+import ru.itis.semesterwork.second.dto.response.projectmember.ProjectMemberResponse;
 import ru.itis.semesterwork.second.service.ProjectMemberService;
 
 import java.util.List;

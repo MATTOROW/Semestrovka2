@@ -8,10 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import ru.itis.semesterwork.second.dto.request.AccountUpdateRequest;
-import ru.itis.semesterwork.second.dto.request.RegistrationRequest;
-import ru.itis.semesterwork.second.dto.response.AccountDetailedResponse;
-import ru.itis.semesterwork.second.dto.response.AccountResponse;
+import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
+import ru.itis.semesterwork.second.dto.request.auth.RegistrationRequest;
+import ru.itis.semesterwork.second.dto.response.account.AccountDetailedResponse;
+import ru.itis.semesterwork.second.dto.response.account.AccountResponse;
 import ru.itis.semesterwork.second.exception.CustomAccountNotFoundServiceException;
 import ru.itis.semesterwork.second.exception.UsernameConflictException;
 import ru.itis.semesterwork.second.exception.UsernameOrEmailConflictException;
@@ -19,6 +19,7 @@ import ru.itis.semesterwork.second.mapper.AccountMapper;
 import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
+
 
 @Service
 @RequiredArgsConstructor
@@ -58,21 +59,38 @@ public class AccountService {
         return accountRepository.save(accountEntity).getUsername();
     }
 
-    public void patchByUsername(String username, AccountUpdateRequest accountUpdateRequest) {
+    public void patchByUsername(String username, @Valid AccountUpdateRequest accountUpdateRequest) {
         AccountEntity account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomAccountNotFoundServiceException(username));
 
         if (
                 accountUpdateRequest.username().isPresent() &&
-                !username.equals(accountUpdateRequest.username().get()) &&
-                accountRepository.existsByUsername(accountUpdateRequest.username().get())
+                !username.equals(accountUpdateRequest.username().value()) &&
+                accountRepository.existsByUsername(accountUpdateRequest.username().value())
         ) {
-            throw new UsernameConflictException(accountUpdateRequest.username().get());
+            throw new UsernameConflictException(accountUpdateRequest.username().value());
         }
 
+        String oldUsername = account.getUsername();
+        String oldDescription = account.getAccountInfoEntity().getDescription();
+
         accountMapper.updateAccountEntity(accountUpdateRequest, account);
+
+        System.out.println(accountUpdateRequest);
+
         AccountEntity updatedAccount = accountRepository.save(account);
-        if (!account.equals(updatedAccount)) {
+
+        String newUsername = updatedAccount.getUsername();
+        String newDescription = updatedAccount.getAccountInfoEntity().getDescription();
+
+
+        if (
+                !oldUsername.equals(newUsername) ||
+                        (
+                                oldDescription != null &&
+                                !oldDescription.equals(newDescription)
+                        ) || (oldDescription == null && newDescription != null)
+        ) {
             SecurityContextHelper.updateCurrentUser(updatedAccount.getUsername());
         }
     }

@@ -8,6 +8,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.itis.semesterwork.second.advice.CustomStringDeserializer;
+import ru.itis.semesterwork.second.validation.model.NullableField;
+import ru.itis.semesterwork.second.validation.model.NullableFieldDeserializer;
 
 @Configuration
 public class JacksonConfig {
@@ -17,6 +19,7 @@ public class JacksonConfig {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(String.class, new CustomStringDeserializer());
+        module.addDeserializer(NullableField.class, new NullableFieldDeserializer());
         mapper
                 .registerModule(module)
                 .registerModule(new JavaTimeModule())
