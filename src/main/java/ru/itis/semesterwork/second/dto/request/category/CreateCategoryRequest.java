@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public record CreateCategoryRequest(
 
         @NotBlank(message = "Название категории обязательно")
-        @Size(min = 2, max = 50, message = "Название категории должно быть от 2 до 50 символов")
+        @Size(min = 2, max = 30, message = "Название категории должно быть от 2 до 30 символов")
         @Schema(description = "Название категории", example = "В работе")
         String name,
 

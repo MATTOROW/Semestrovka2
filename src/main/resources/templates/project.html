@@ -25,7 +25,8 @@
         }
 
         .category-column {
-            min-width: 300px;
+            min-width: 400px;
+            max-width: 400px;
             max-height: calc(100vh - var(--navbar-height) - 180px); /* 180px - примерный отступ для шапки и других элементов */
             height: 100%;
             background: rgba(30, 41, 59, 0.4);
@@ -83,6 +84,7 @@
             padding: 0.5rem;
             scrollbar-width: thin;
             scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+            padding-bottom: 10px; /* Добавляем место для спиннера */
         }
 
         .tasks-container::-webkit-scrollbar {
@@ -106,6 +108,21 @@
             outline: none;
             border-color: #818cf8;
             box-shadow: 0 0 0 1px #818cf8;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            margin: 10px auto;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #818cf8;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -145,7 +162,7 @@
         <form id="createCategoryForm">
             <div class="mb-4">
                 <label class="block text-sm mb-2">Category Name</label>
-                <input type="text" name="name" required minlength="2" maxlength="50"
+                <input type="text" name="name" required minlength="2" maxlength="30"
                        class="input-field w-full rounded-lg px-3 py-2">
             </div>
             <div class="mb-4">
@@ -203,7 +220,7 @@
             <input type="hidden" id="editingCategoryId">
             <div class="mb-4">
                 <label class="block text-sm mb-2">Category Name</label>
-                <input type="text" id="editCategoryName" name="name" required minlength="2" maxlength="50"
+                <input type="text" id="editCategoryName" name="name" required minlength="2" maxlength="30"
                        class="input-field w-full rounded-lg px-3 py-2">
             </div>
             <div class="mb-4">
@@ -237,7 +254,7 @@
             <input type="hidden" id="taskCategoryId">
             <div class="mb-4">
                 <label class="block text-sm mb-2">Task Name*</label>
-                <input type="text" name="name" required maxlength="255"
+                <input type="text" name="name" required maxlength="70"
                        class="input-field w-full rounded-lg px-3 py-2">
             </div>
             <div class="mb-4">
@@ -268,6 +285,10 @@
     const projectId = '[[${project.id}]]';
     let categories = [];
     // Добавьте в начало скрипта
+    const TASKS_PER_PAGE = 10;
+    let tasksLoading = {};
+    let hasMoreTasks = {};
+    let tasksPage = {};
 
     // Загрузка категорий и задач
     async function loadCategories() {
@@ -275,12 +296,16 @@
             const response = await fetch(`/api/v1/projects/${projectId}/categories`);
             if (response.ok) {
                 categories = await response.json();
+                // Инициализируем пагинацию для каждой категории
+                categories.forEach(cat => {
+                    tasksLoading[cat.id] = false;
+                    hasMoreTasks[cat.id] = true;
+                    tasksPage[cat.id] = 0;
+                });
                 renderCategories();
-            } else {
-                showNotification('Error', error.message || 'Failed to create project', 'error');
             }
         } catch (error) {
-            showNotification('Error', 'Network error', 'error');
+            showNotification('Error', 'Failed to load categories', 'error');
         }
     }
 
@@ -337,6 +362,7 @@
                     </div>
                     <div id="tasks-${category.id}" class="tasks-container">
                         <!-- Задачи будут здесь -->
+                         <div class="loading-spinner" id="spinner-${category.id}"></div>
                     </div>
                     <div class="category-footer">
                         <button onclick="openCreateTaskModal('${category.id}')"
@@ -352,44 +378,54 @@
 
     // Загрузка задач для категории
     async function loadTasksForCategory(categoryId, loadMore = false) {
+        if (tasksLoading[categoryId] || !hasMoreTasks[categoryId]) return;
+
+        tasksLoading[categoryId] = true;
 
         try {
+            const page = loadMore ? tasksPage[categoryId] : 0;
             const response = await fetch(
-                `/api/v1/projects/${projectId}/categories/${categoryId}/tasks/search`
+                `/api/v1/projects/${projectId}/categories/${categoryId}/tasks/search?page=${page}&size=${TASKS_PER_PAGE}`
             );
 
             if (response.ok) {
                 const data = await response.json();
+                hasMoreTasks[categoryId] = !data.last;
+                tasksPage[categoryId] = page + 1;
+
                 renderTasks(categoryId, data.content, loadMore);
             }
         } catch (error) {
             console.error('Error loading tasks:', error);
+        } finally {
+            tasksLoading[categoryId] = false;
         }
     }
 
     // Рендер задач
-    function renderTasks(categoryId, tasks) {
+    function renderTasks(categoryId, tasks, append = false) {
         const container = document.getElementById(`tasks-${categoryId}`);
-        if (!container || !tasks) return;
+        if (!container) return;
 
-        container.innerHTML = '';
-
-        // Проверяем, что tasks - массив
-        if (Array.isArray(tasks)) {
-            tasks.forEach(task => {
-                const taskElement = document.createElement('div');
-                taskElement.className = 'task-card rounded-lg p-3 cursor-pointer';
-                taskElement.id = task.id
-                taskElement.innerHTML = `
-                <h4 class="font-medium mb-1">${task.name}</h4>
-                <div class="flex justify-between items-center text-xs text-slate-400">
-                    <span>${task.status}</span>
-                    <span>${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
-                </div>
-            `;
-                container.appendChild(taskElement);
-            });
+        if (!append) {
+            container.innerHTML = '';
         }
+
+        tasks.forEach(task => {
+            const taskElement = document.createElement('div');
+            taskElement.className = 'task-card rounded-lg p-3 cursor-pointer mb-2';
+            taskElement.dataset.taskId = task.id;
+            taskElement.innerHTML = `
+            <h4 class="font-medium mb-1">${task.name}</h4>
+            <div class="flex justify-between items-center text-xs text-slate-400">
+                <span>${task.status}</span>
+                <span>${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
+            </div>
+        `;
+            container.appendChild(taskElement);
+        });
+
+        // Инициализируем drag-and-drop для новых задач
         setupDragAndDrop();
     }
 
@@ -513,6 +549,15 @@
         const tasksContainers = document.querySelectorAll('[id^="tasks-"]');
 
         tasksContainers.forEach(container => {
+
+            container.addEventListener('scroll', function() {
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50 &&
+                    !tasksLoading[this.id.replace('tasks-', '')] &&
+                    hasMoreTasks[this.id.replace('tasks-', '')]) {
+                    loadTasksForCategory(this.id.replace('tasks-', ''), true);
+                }
+            });
+
             container.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 const afterElement = getDragAfterElement(container, e.clientY);
@@ -551,7 +596,10 @@
                     newPosition = afterIndex >= 0 ? afterIndex : tasksInTarget.length;
                 }
 
-                console.log('New position calculated:', newPosition); // Отладочный вывод
+                console.log(JSON.stringify({
+                    categoryId: targetCategoryId,
+                    position: newPosition
+                }))
 
                 try {
                     const response = await fetch(
@@ -591,7 +639,7 @@
             task.setAttribute('draggable', 'true');
 
             task.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', task.id);
+                e.dataTransfer.setData('text/plain', task.dataset.taskId);
                 e.dataTransfer.setData('source-category', task.closest('[id^="tasks-"]').id.replace('tasks-', ''));
                 e.dataTransfer.effectAllowed = 'move';
                 task.classList.add('dragging');

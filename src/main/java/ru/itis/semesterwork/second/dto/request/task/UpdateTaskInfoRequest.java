@@ -9,7 +9,7 @@ public record UpdateTaskInfoRequest(
 
 
         NullableField<
-                @Size(max = 255, message = "Task name must be at most 255 characters")
+                @Size(max = 70, message = "Task name must be at most 70 characters")
                 String
                 > name,
 
