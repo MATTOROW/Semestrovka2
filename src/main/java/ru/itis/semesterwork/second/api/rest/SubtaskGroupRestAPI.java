@@ -75,5 +75,15 @@ public interface SubtaskGroupRestAPI {
             @PathVariable("taskId") UUID taskId,
             @RequestBody UpdateSubtaskGroupOrderRequest request
     );
+
+    @PatchMapping("/{innerId}/status")
+    @ResponseStatus(HttpStatus.OK)
+    void changeStatus(
+            @PathVariable("innerId") UUID innerId,
+            @PathVariable("projectId") UUID projectId,
+            @PathVariable("categoryId") UUID categoryId,
+            @PathVariable("taskId") UUID taskId,
+            @RequestParam("completed") Boolean completed
+    );
 }
 

@@ -48,4 +48,9 @@ public class SubtaskGroupRestController implements SubtaskGroupRestAPI {
     public void updateOrder(UUID projectId, UUID categoryId, UUID taskId, UpdateSubtaskGroupOrderRequest request) {
         subtaskGroupService.updateOrder(projectId, categoryId, taskId, request);
     }
+
+    @Override
+    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, Boolean completed) {
+        subtaskGroupService.changeStatus(innerId, projectId, categoryId, taskId, completed);
+    }
 }

@@ -30,7 +30,7 @@ public interface TaskRestAPI {
     CustomPageResponseDto<TaskShortResponse> searchTasks(
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,
-            @PageableDefault(sort = "position", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(sort = "position", direction = Sort.Direction.DESC) Pageable pageable
     );
 
     // Создать новую задачу

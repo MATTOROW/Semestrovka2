@@ -33,6 +33,7 @@ public class AccountRestController implements AccountRestAPI {
                 accounts.getSize(),
                 accounts.getTotalElements(),
                 accounts.getTotalPages(),
+                accounts.isLast(),
                 accounts.getContent()
         );
     }

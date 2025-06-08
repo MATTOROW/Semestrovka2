@@ -18,6 +18,7 @@ import ru.itis.semesterwork.second.model.ProjectEntity;
 import ru.itis.semesterwork.second.repository.CategoryRepository;
 import ru.itis.semesterwork.second.repository.ProjectRepository;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +31,7 @@ public class CategoryService {
     private final ProjectRepository projectRepository;
     private final CategoryMapper categoryMapper;
     private final TaskService taskService;
+    private final HierarchyValidationService hierarchyValidationService;
 
     @Transactional
     public UUID create(UUID projectId, @Valid CreateCategoryRequest request) {
@@ -48,9 +50,11 @@ public class CategoryService {
     }
 
     public List<CategoryResponse> getByProjectId(UUID projectId) {
-        ProjectEntity project = projectRepository.findByInnerId(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        return categoryRepository.findAllByProjectId(project.getId()).stream().map(categoryMapper::toResponse).toList();
+        ProjectEntity project = hierarchyValidationService.validateProjectHierarchy(projectId);
+        return project.getCategories().stream()
+                .sorted(Comparator.comparing(CategoryEntity::getName))
+                .map(categoryMapper::toResponse)
+                .toList();
     }
 
     @Transactional

@@ -7,5 +7,6 @@ public record CustomPageResponseDto<T>(
         int pageSize,
         long totalElements,
         int totalPages,
+        boolean last,
         List<T> content
 ) {}

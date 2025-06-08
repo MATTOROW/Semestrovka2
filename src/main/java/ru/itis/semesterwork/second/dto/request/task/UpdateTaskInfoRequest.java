@@ -3,7 +3,7 @@ package ru.itis.semesterwork.second.dto.request.task;
 import jakarta.validation.constraints.Size;
 import ru.itis.semesterwork.second.validation.model.NullableField;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record UpdateTaskInfoRequest(
 
@@ -19,5 +19,5 @@ public record UpdateTaskInfoRequest(
                 String
                 > description,
 
-        NullableField<LocalDateTime> deadline
+        NullableField<Instant> deadline
 ) {}

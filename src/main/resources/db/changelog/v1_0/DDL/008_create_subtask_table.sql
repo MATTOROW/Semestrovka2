@@ -8,7 +8,8 @@ CREATE TABLE subtask (
 );
 
 ALTER TABLE subtask ADD CONSTRAINT uq_subtask_inner_id UNIQUE (inner_id);
-ALTER TABLE subtask ADD CONSTRAINT fk_subtask_group FOREIGN KEY (subtask_group_id) REFERENCES subtask_group(id);
+ALTER TABLE subtask ADD CONSTRAINT fk_subtask_group FOREIGN KEY (subtask_group_id) REFERENCES subtask_group(id)
+ON DELETE CASCADE;
 
 COMMENT ON TABLE subtask IS 'Подзадача внутри группы подзадач';
 COMMENT ON COLUMN subtask.inner_id IS 'UUID для фронта';

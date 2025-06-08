@@ -14,10 +14,7 @@ import ru.itis.semesterwork.second.dto.response.project.ProjectResponse;
 import ru.itis.semesterwork.second.dto.response.project.ProjectShortResponse;
 import ru.itis.semesterwork.second.exception.ProjectNotFoundException;
 import ru.itis.semesterwork.second.mapper.ProjectMapper;
-import ru.itis.semesterwork.second.model.AccountEntity;
-import ru.itis.semesterwork.second.model.ProjectEntity;
-import ru.itis.semesterwork.second.model.ProjectMemberEntity;
-import ru.itis.semesterwork.second.model.ProjectRole;
+import ru.itis.semesterwork.second.model.*;
 import ru.itis.semesterwork.second.repository.ProjectMemberRepository;
 import ru.itis.semesterwork.second.repository.ProjectRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
@@ -45,6 +42,8 @@ public class ProjectService {
                 .account(SecurityContextHelper.getCurrentUser().getAccount())
                 .build()
         );
+        CategoryEntity category = CategoryEntity.builder().project(project).name("MAIN").color("#FF4D4D").build();
+        project.addCategory(category);
         return projectRepository.save(project).getInnerId();
     }
 
@@ -97,6 +96,7 @@ public class ProjectService {
                 response.getSize(),
                 response.getTotalElements(),
                 response.getTotalPages(),
+                response.isLast(),
                 response.getContent()
         );
     }

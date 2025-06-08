@@ -5,10 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "task")
@@ -43,10 +40,10 @@ public class TaskEntity {
     private Instant createDate;
 
     @Column(name = "end_date", columnDefinition = "timestamp")
-    private LocalDateTime endDate;
+    private Instant endDate;
 
     @Column(columnDefinition = "timestamp")
-    private LocalDateTime deadline;
+    private Instant deadline;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
@@ -61,7 +58,8 @@ public class TaskEntity {
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<SubtaskGroupEntity> subtaskGroups = new HashSet<>();
+    @OrderBy("position ASC")
+    private List<SubtaskGroupEntity> subtaskGroups = new ArrayList<>();
 
     public void addSubtaskGroup(SubtaskGroupEntity group) {
         subtaskGroups.add(group);
@@ -72,12 +70,12 @@ public class TaskEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TaskEntity that)) return false;
-        return innerId.equals(that.innerId);
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return innerId.hashCode();
+        return id.hashCode();
     }
 }
 

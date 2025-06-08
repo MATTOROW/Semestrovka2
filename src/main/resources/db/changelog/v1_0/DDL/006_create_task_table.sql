@@ -4,9 +4,9 @@ CREATE TABLE task (
                       name TEXT NOT NULL,
                       description TEXT,
                       status VARCHAR(50) NOT NULL,
-                      create_date TIMESTAMP NOT NULL,
-                      end_date TIMESTAMP,
-                      deadline TIMESTAMP,
+                      create_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                      end_date TIMESTAMP WITHOUT TIME ZONE,
+                      deadline TIMESTAMP WITHOUT TIME ZONE,
                       category_id BIGINT NOT NULL,
                       author_id BIGINT NOT NULL,
                       position INTEGER NOT NULL

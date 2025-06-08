@@ -26,7 +26,8 @@ public class SubtaskEntity {
     private String name;
 
     @Column(nullable = false)
-    private Boolean completed;
+    @Builder.Default
+    private Boolean completed = false;
 
     @Column
     private Integer position;

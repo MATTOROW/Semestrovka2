@@ -11,7 +11,7 @@ import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping("/api/v1/projects/{projectId}/categories/{categoryId}/tasks/{taskId}/groups/{groupId}")
+@RequestMapping("/api/v1/projects/{projectId}/categories/{categoryId}/tasks/{taskId}/groups/{groupId}/subtask")
 public interface SubtaskRestAPI {
 
     // Получить подзадачу по innerId
@@ -26,7 +26,7 @@ public interface SubtaskRestAPI {
     );
 
     // Получить все подзадачи группы подзадач по innerId группы
-    @GetMapping()
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
     List<SubtaskResponse> getByGroupInnerId(
             @PathVariable("projectId") UUID projectId,
@@ -78,6 +78,17 @@ public interface SubtaskRestAPI {
             @PathVariable("taskId") UUID taskId,
             @PathVariable("groupId") UUID groupId,
             @RequestBody UpdateSubtaskOrderRequest request
+    );
+
+    @PatchMapping("/{innerId}/status")
+    @ResponseStatus(HttpStatus.OK)
+    void changeStatus(
+            @PathVariable("innerId") UUID innerId,
+            @PathVariable("projectId") UUID projectId,
+            @PathVariable("categoryId") UUID categoryId,
+            @PathVariable("taskId") UUID taskId,
+            @PathVariable("groupId") UUID groupId,
+            @RequestParam("completed") Boolean completed
     );
 }
 

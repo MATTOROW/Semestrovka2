@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.itis.semesterwork.second.exception.*;
 import ru.itis.semesterwork.second.model.*;
-import ru.itis.semesterwork.second.repository.ProjectRepository;
+import ru.itis.semesterwork.second.repository.*;
 
 import java.util.UUID;
 
@@ -13,55 +13,38 @@ import java.util.UUID;
 public class HierarchyValidationService {
 
     private final ProjectRepository projectRepository;
+    private final CategoryRepository categoryRepository;
+    private final TaskRepository taskRepository;
+    private final SubtaskGroupRepository subtaskGroupRepository;
+    private final SubtaskRepository subtaskRepository;
 
     public ProjectEntity validateProjectHierarchy(UUID projectId) {
-        ProjectEntity project = projectRepository.findByInnerId(projectId)
+        return projectRepository.findByInnerId(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-        return project;
     }
 
     public CategoryEntity validateCategoryHierarchy(UUID projectId, UUID categoryId) {
-        ProjectEntity project = validateProjectHierarchy(projectId);
-
-        CategoryEntity category = project.getCategories().stream()
-                .filter(cat -> cat.getInnerId().equals(categoryId))
-                .findAny()
+        return categoryRepository.findByInnerIdAndProject_InnerId(categoryId, projectId)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));
-
-        return category;
     }
 
     public TaskEntity validateTaskHierarchy(UUID projectId, UUID categoryId, UUID taskId) {
-        CategoryEntity category = validateCategoryHierarchy(projectId, categoryId);
-
-        TaskEntity task = category.getTasks().stream()
-                .filter(t -> t.getInnerId().equals(taskId))
-                .findAny()
+        return taskRepository.findByInnerIdAndCategory_InnerIdAndCategory_Project_InnerId(taskId, categoryId, projectId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
-
-        return task;
     }
 
     public SubtaskGroupEntity validateSubtaskGroupHierarchy(UUID projectId, UUID categoryId, UUID taskId, UUID groupId) {
-        TaskEntity task = validateTaskHierarchy(projectId, categoryId, taskId);
-
-        SubtaskGroupEntity group = task.getSubtaskGroups().stream()
-                .filter(g -> g.getInnerId().equals(groupId))
-                .findAny()
+        return subtaskGroupRepository
+                .findByInnerIdAndTask_InnerIdAndTask_Category_InnerIdAndTask_Category_Project_InnerId(
+                        groupId, taskId, categoryId, projectId)
                 .orElseThrow(() -> new SubtaskGroupNotFoundException(groupId));
-
-        return group;
     }
 
     public SubtaskEntity validateSubtaskHierarchy(UUID projectId, UUID categoryId, UUID taskId, UUID groupId, UUID subtaskId) {
-        SubtaskGroupEntity group = validateSubtaskGroupHierarchy(projectId, categoryId, taskId, groupId);
-
-        SubtaskEntity subtask = group.getSubtasks().stream()
-                .filter(s -> s.getInnerId().equals(subtaskId))
-                .findAny()
+        return subtaskRepository
+                .findByInnerIdAndSubtaskGroup_InnerIdAndSubtaskGroup_Task_InnerIdAndSubtaskGroup_Task_Category_InnerIdAndSubtaskGroup_Task_Category_Project_InnerId(
+                        subtaskId, groupId, taskId, categoryId, projectId)
                 .orElseThrow(() -> new SubtaskNotFoundException(subtaskId));
-
-        return subtask;
     }
 }
+

@@ -21,4 +21,7 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> 
     void deleteByInnerId(@Param("innerId") UUID categoryId);
 
     boolean existsByProjectInnerIdAndInnerId(UUID projectId, UUID categoryId);
+
+    Optional<CategoryEntity> findByInnerIdAndProject_InnerId(UUID categoryId, UUID projectId);
+
 }

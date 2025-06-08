@@ -21,7 +21,6 @@ import ru.itis.semesterwork.second.repository.TaskRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -53,6 +52,7 @@ public class TaskService {
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages(),
+                page.isLast(),
                 page.getContent()
         );
     }
@@ -63,7 +63,7 @@ public class TaskService {
         taskEntity.setAuthor(SecurityContextHelper.getCurrentUser().getAccount());
         CategoryEntity category = hierarchyValidationService.validateCategoryHierarchy(projectId, categoryId);
         taskEntity.setCategory(category);
-        taskEntity.setPosition(category.getTasks().size());
+        taskEntity.setPosition(taskRepository.countByCategoryInnerId(categoryId));
         return taskRepository.save(taskEntity).getInnerId();
     }
 
@@ -76,55 +76,28 @@ public class TaskService {
 
     @Transactional
     public void deleteByInnerId(UUID innerId, UUID projectId, UUID categoryId) {
-        CategoryEntity category = hierarchyValidationService.validateCategoryHierarchy(projectId, categoryId);
-        TaskEntity task = category.getTasks().stream()
-                .filter(t -> t.getInnerId().equals(innerId))
-                .findAny()
-                .orElseThrow(() -> new TaskNotFoundException(innerId));
+        TaskEntity task = hierarchyValidationService.validateTaskHierarchy(projectId, categoryId, innerId);
+        Integer pos = task.getPosition();
 
-        List<TaskEntity> tasks = category.getTasks();
-        for (TaskEntity taskEntity : tasks) {
-            if (taskEntity.getPosition() > task.getPosition()) {
-                taskEntity.setPosition(taskEntity.getPosition() - 1);
-            }
-        }
-        tasks.remove(task);
+        taskRepository.updatePositionsMinus(categoryId, pos);
         taskRepository.delete(task);
-        taskRepository.saveAll(tasks);
     }
 
     @Transactional
     public void changeTaskCategory(UUID innerId, UUID projectId, UUID categoryId, @Valid UpdateTaskCategoryRequest request) {
         TaskEntity taskEntity = hierarchyValidationService.validateTaskHierarchy(projectId, categoryId, innerId);
-        CategoryEntity oldCategory = taskEntity.getCategory();
-        CategoryEntity newCategory = hierarchyValidationService.validateCategoryHierarchy(projectId, request.categoryId());
+        Integer oldPos = taskEntity.getPosition();
+
         Integer newPosition = request.position();
+        CategoryEntity newCategory = hierarchyValidationService.validateCategoryHierarchy(projectId, request.categoryId());
 
-        System.out.println("++++++++++++++++++++==========" + newPosition);
-
-        List<TaskEntity> oldCategoryTasks = oldCategory.getTasks();
-        for (TaskEntity t : oldCategoryTasks) {
-            if (t.getPosition() > taskEntity.getPosition()) {
-                t.setPosition(t.getPosition() - 1);
-            }
-        }
-
-        List<TaskEntity> newCategoryTasks = newCategory.getTasks();
-
-        if (newPosition > newCategoryTasks.size()) {
-            newPosition = newCategoryTasks.size() + 1;
-        } else {
-            for (TaskEntity t : newCategoryTasks) {
-                if (t.getPosition() >= newPosition) {
-                    t.setPosition(t.getPosition() + 1);
-                }
-            }
-        }
         taskEntity.setCategory(newCategory);
-        taskEntity.setPosition(newPosition);
 
-        taskRepository.saveAll(oldCategoryTasks);
-        taskRepository.saveAll(newCategoryTasks);
+        taskRepository.updatePositionsMinus(categoryId, oldPos);
+        taskRepository.flush();
+        taskRepository.updatePositionsPlus(request.categoryId(), newPosition - 1);
+        taskRepository.flush();
+        taskEntity.setPosition(newPosition);
         taskRepository.save(taskEntity);
     }
 

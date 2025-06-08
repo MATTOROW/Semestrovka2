@@ -26,7 +26,8 @@ public class SubtaskGroupEntity {
     private String name;
 
     @Column(nullable = false)
-    private Boolean completed;
+    @Builder.Default
+    private Boolean completed = false;
 
     @Column
     private Integer position;
@@ -49,11 +50,11 @@ public class SubtaskGroupEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof SubtaskGroupEntity that)) return false;
-        return innerId.equals(that.innerId);
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return innerId.hashCode();
+        return id.hashCode();
     }
 }

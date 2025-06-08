@@ -18,6 +18,48 @@
             color: #e2e8f0;
             padding-top: var(--navbar-height);
         }
+
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            max-width: 24rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        .notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        .notification-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .modal-content {
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #1e293b !important;
+            opacity: 1 !important;
+        }
+
         .project-header {
             backdrop-filter: blur(16px);
             background: rgba(15, 23, 42, 0.7);
@@ -27,7 +69,7 @@
         .category-column {
             min-width: 400px;
             max-width: 400px;
-            max-height: calc(100vh - var(--navbar-height) - 180px); /* 180px - примерный отступ для шапки и других элементов */
+            max-height: calc(100vh - var(--navbar-height) - 180px);
             height: 100%;
             background: rgba(30, 41, 59, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -84,7 +126,7 @@
             padding: 0.5rem;
             scrollbar-width: thin;
             scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-            padding-bottom: 10px; /* Добавляем место для спиннера */
+            padding-bottom: 10px;
         }
 
         .tasks-container::-webkit-scrollbar {
@@ -124,6 +166,66 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .subtask-group {
+            background: rgba(51, 65, 85, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .subtask-group-header {
+            padding: 0.75rem 1rem;
+            background: rgba(71, 85, 105, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subtask-group-content {
+            padding: 0.75rem;
+        }
+
+        .subtask-item {
+            background: rgba(71, 85, 105, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .subtask-item:hover {
+            background: rgba(71, 85, 105, 0.4);
+        }
+
+        .subtask-item.dragging {
+            opacity: 0.5;
+            border: 1px dashed #818cf8;
+        }
+
+        .subtask-group.dragging {
+            border: 1px dashed #818cf8;
+        }
+
+        .drag-handle {
+            cursor: move;
+            margin-right: 0.5rem;
+            color: #94a3b8;
+        }
+
+        .subtask-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .subtask-checkbox {
+            margin-right: 0.75rem;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -151,13 +253,24 @@
 
 <!-- Основное содержимое - горизонтальный скролл категорий -->
 <main class="container mx-auto px-4 py-6 overflow-x-auto scrollbar-hide">
+
+    <div id="notification" class="notification hidden">
+        <span id="notification-icon" class="notification-icon">✓</span>
+        <div>
+            <div id="notification-title" class="font-medium"></div>
+            <div id="notification-message" class="text-sm opacity-90"></div>
+            <ul id="notification-errors" class="mt-1 text-xs list-disc list-inside"></ul>
+        </div>
+    </div>
+
     <div id="categoriesContainer" class="flex space-x-4 pb-4">
         <!-- Категории будут загружаться здесь -->
     </div>
 </main>
 
+<!-- Модальные окна -->
 <div id="createCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
         <h2 class="text-xl font-bold mb-4">Create New Category</h2>
         <form id="createCategoryForm">
             <div class="mb-4">
@@ -187,9 +300,8 @@
     </div>
 </div>
 
-<!-- Модальное окно удаления категории -->
 <div id="deleteCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
         <h2 class="text-xl font-bold mb-4">Delete Category</h2>
         <form id="deleteCategoryForm">
             <input type="hidden" id="categoryToDeleteId">
@@ -212,9 +324,8 @@
     </div>
 </div>
 
-<!-- Модальное окно редактирования категории -->
 <div id="editCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
         <h2 class="text-xl font-bold mb-4">Edit Category</h2>
         <form id="editCategoryForm">
             <input type="hidden" id="editingCategoryId">
@@ -246,9 +357,8 @@
     </div>
 </div>
 
-<!-- Модальное окно создания задачи -->
 <div id="createTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
         <h2 class="text-xl font-bold mb-4">Create New Task</h2>
         <form id="createTaskForm">
             <input type="hidden" id="taskCategoryId">
@@ -280,29 +390,173 @@
     </div>
 </div>
 
+<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 overflow-y-auto py-10">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-4xl max-h-90vh flex flex-col modal-content">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+            <h2 id="taskModalTitle" class="text-2xl font-bold">Task Details</h2>
+            <div class="flex space-x-3">
+                <button id="deleteTaskBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors">
+                    Delete Task
+                </button>
+                <button onclick="closeTaskModal()" class="px-4 py-2 text-slate-400 hover:text-white">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pr-2">
+            <div class="mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm text-slate-300 mb-1.5">Task Name</label>
+                        <input type="text" id="taskName" class="input-field w-full rounded-lg px-3 py-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-300 mb-1.5">Deadline</label>
+                        <input type="datetime-local" id="taskDeadline" class="input-field w-full rounded-lg px-3 py-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-slate-300 mb-1.5">Description</label>
+                    <textarea id="taskDescription" rows="3" class="input-field w-full rounded-lg px-3 py-2 text-slate-200"></textarea>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Subtasks Groups</h3>
+                    <button onclick="openCreateSubtaskGroupModal()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm">
+                        + Add Group
+                    </button>
+                </div>
+
+                <div id="subtaskGroupsContainer" class="space-y-6">
+                    <!-- Группы будут загружаться здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="createSubtaskGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
+        <h2 class="text-xl font-bold mb-4">Create Subtask Group</h2>
+        <form id="createSubtaskGroupForm">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Group Name</label>
+                <input type="text" name="name" required maxlength="150"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateSubtaskGroupModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                    Create
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="createSubtaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md modal-content">
+        <h2 class="text-xl font-bold mb-4">Create Subtask</h2>
+        <form id="createSubtaskForm">
+            <input type="hidden" id="subtaskGroupId">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Subtask Name</label>
+                <input type="text" name="name" required maxlength="150"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateSubtaskModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                    Create
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-    // Текущий проект
+    // Глобальные переменные
     const projectId = '[[${project.id}]]';
     let categories = [];
-    // Добавьте в начало скрипта
-    const TASKS_PER_PAGE = 10;
+    const TASKS_PER_PAGE = 20;
     let tasksLoading = {};
     let hasMoreTasks = {};
     let tasksPage = {};
+    let currentTask = null;
+    let currentCategoryId = null;
+    let subtaskGroups = [];
+    let eventListeners = {};
 
-    // Загрузка категорий и задач
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        setupModalEventListeners();
+        setupColorPicker();
+    });
+
+    // Настройка обработчиков событий для модальных окон
+    function setupModalEventListeners() {
+        // Обработчики для модального окна создания категории
+        document.getElementById('createCategoryForm').addEventListener('submit', handleCreateCategory);
+
+        // Обработчики для модального окна редактирования категории
+        document.getElementById('editCategoryForm').addEventListener('submit', handleEditCategory);
+
+        // Обработчики для модального окна удаления категории
+        document.getElementById('deleteCategoryForm').addEventListener('submit', handleDeleteCategory);
+
+        // Обработчики для модального окна создания задачи
+        document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
+
+        // Обработчики для модального окна создания группы подзадач
+        document.getElementById('createSubtaskGroupForm').addEventListener('submit', handleCreateSubtaskGroup);
+
+        // Обработчики для модального окна создания подзадачи
+        document.getElementById('createSubtaskForm').addEventListener('submit', handleCreateSubtask);
+
+        // Обработчик для кнопки удаления задачи
+        document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
+    }
+
+    // Настройка цветового пикера
+    function setupColorPicker() {
+        const colorPicker = document.querySelector('input[type="color"]');
+        const colorText = document.querySelector('input[name="colorText"]');
+
+        colorPicker.addEventListener('input', (e) => {
+            colorText.value = e.target.value;
+        });
+
+        colorText.addEventListener('input', (e) => {
+            if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(e.target.value)) {
+                colorPicker.value = e.target.value;
+            }
+        });
+    }
+
+    // Загрузка категорий
     async function loadCategories() {
         try {
             const response = await fetch(`/api/v1/projects/${projectId}/categories`);
             if (response.ok) {
                 categories = await response.json();
-                // Инициализируем пагинацию для каждой категории
                 categories.forEach(cat => {
                     tasksLoading[cat.id] = false;
                     hasMoreTasks[cat.id] = true;
                     tasksPage[cat.id] = 0;
                 });
                 renderCategories();
+            } else {
+                throw new Error('Failed to load categories');
             }
         } catch (error) {
             showNotification('Error', 'Failed to load categories', 'error');
@@ -318,58 +572,37 @@
             const categoryCol = document.createElement('div');
             categoryCol.className = 'category-column rounded-lg flex-shrink-0';
             categoryCol.innerHTML = `
-                    <div class="category-header p-4" style="border-color: ${category.color}">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-semibold" style="color: ${category.color}">${category.name}</h3>
-                            <div class="relative" x-data="{ open: false }">
-                                <button
-                                    @click="open = !open"
-                                    class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700 transition-colors"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    </svg>
-                                </button>
+                <div class="category-header p-4" style="border-color: ${category.color}">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold" style="color: ${category.color}">${category.name}</h3>
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                </svg>
+                            </button>
 
-                                <!-- Выпадающее меню -->
-                                <div
-                                    x-show="open"
-                                    @click.away="open = false"
-                                    class="absolute left-full mt-2 w-40 rounded-md shadow-lg z-20 border border-slate-700"
-                                    style="background-color: #1e293b;"
-                                >
-
-                                    <div class="py-1">
-                                        <!-- Опция "Изменить" -->
-                                        <button
-                                            @click="openEditCategoryModal('${category.id}'); open = false"
-                                            class="block w-full text-left px-4 py-2 text-sm hover:bg-slate-700"
-                                        >
-                                            Изменить
-                                        </button>
-
-                                        <!-- Опция "Удалить" -->
-                                        <button
-                                            @click="openDeleteCategoryModal('${category.id}'); open = false"
-                                            class="block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700"
-                                        >
-                                            Удалить
-                                        </button>
-                                    </div>
+                            <div x-show="open" @click.away="open = false" class="absolute left-full mt-2 w-40 rounded-md shadow-lg z-20 border border-slate-700" style="background-color: #1e293b;">
+                                <div class="py-1">
+                                    <button @click="openEditCategoryModal('${category.id}'); open = false" class="block w-full text-left px-4 py-2 text-sm hover:bg-slate-700">
+                                        Изменить
+                                    </button>
+                                    <button @click="openDeleteCategoryModal('${category.id}'); open = false" class="block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700">
+                                        Удалить
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div id="tasks-${category.id}" class="tasks-container">
-                        <!-- Задачи будут здесь -->
-                         <div class="loading-spinner" id="spinner-${category.id}"></div>
-                    </div>
-                    <div class="category-footer">
-                        <button onclick="openCreateTaskModal('${category.id}')"
-                                class="w-full py-2 text-slate-400 hover:text-white text-sm">
-                            + Add Task
-                        </button>
-                    </div>
+                </div>
+                <div id="tasks-${category.id}" class="tasks-container">
+                    <div class="loading-spinner" id="spinner-${category.id}"></div>
+                </div>
+                <div class="category-footer">
+                    <button onclick="openCreateTaskModal('${category.id}')" class="w-full py-2 text-slate-400 hover:text-white text-sm">
+                        + Add Task
+                    </button>
+                </div>
             `;
             container.appendChild(categoryCol);
             loadTasksForCategory(category.id);
@@ -381,6 +614,7 @@
         if (tasksLoading[categoryId] || !hasMoreTasks[categoryId]) return;
 
         tasksLoading[categoryId] = true;
+        document.getElementById(`spinner-${categoryId}`).style.display = 'block';
 
         try {
             const page = loadMore ? tasksPage[categoryId] : 0;
@@ -392,13 +626,13 @@
                 const data = await response.json();
                 hasMoreTasks[categoryId] = !data.last;
                 tasksPage[categoryId] = page + 1;
-
                 renderTasks(categoryId, data.content, loadMore);
             }
         } catch (error) {
-            console.error('Error loading tasks:', error);
+            showNotification('Error', 'Failed to load tasks', 'error');
         } finally {
             tasksLoading[categoryId] = false;
+            document.getElementById(`spinner-${categoryId}`).style.display = 'none';
         }
     }
 
@@ -415,27 +649,167 @@
             const taskElement = document.createElement('div');
             taskElement.className = 'task-card rounded-lg p-3 cursor-pointer mb-2';
             taskElement.dataset.taskId = task.id;
+            taskElement.onclick = () => openTaskModal(task.id, categoryId);
             taskElement.innerHTML = `
-            <h4 class="font-medium mb-1">${task.name}</h4>
-            <div class="flex justify-between items-center text-xs text-slate-400">
-                <span>${task.status}</span>
-                <span>${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
-            </div>
-        `;
+                <h4 class="font-medium mb-1 task-name">${task.name}</h4>
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span class="task-status">${task.status}</span>
+                    <span class="task-deadline">${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
+                </div>
+            `;
             container.appendChild(taskElement);
         });
 
-        // Инициализируем drag-and-drop для новых задач
         setupDragAndDrop();
     }
 
-    // Управление модальными окнами
+    // Настройка drag-and-drop для задач
+    function setupDragAndDrop() {
+        const tasksContainers = document.querySelectorAll('[id^="tasks-"]');
+
+        tasksContainers.forEach(container => {
+            // Удаляем старые обработчики, если они есть
+            container.removeEventListener('scroll', handleTaskScroll);
+            container.removeEventListener('dragover', handleTaskDragOver);
+            container.removeEventListener('drop', handleTaskDrop);
+
+            // Добавляем новые обработчики
+            container.addEventListener('scroll', handleTaskScroll);
+            container.addEventListener('dragover', handleTaskDragOver);
+            container.addEventListener('drop', handleTaskDrop);
+        });
+
+        // Обработчики для задач
+        document.querySelectorAll('.task-card').forEach(task => {
+            task.setAttribute('draggable', 'true');
+
+            // Удаляем старые обработчики
+            task.removeEventListener('dragstart', handleTaskDragStart);
+            task.removeEventListener('dragend', handleTaskDragEnd);
+
+            // Добавляем новые обработчики
+            task.addEventListener('dragstart', handleTaskDragStart);
+            task.addEventListener('dragend', handleTaskDragEnd);
+        });
+    }
+
+    // Обработчики событий для drag-and-drop задач
+    function handleTaskScroll(e) {
+        const container = e.target;
+        const categoryId = container.id.replace('tasks-', '');
+
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50 &&
+            !tasksLoading[categoryId] && hasMoreTasks[categoryId]) {
+            loadTasksForCategory(categoryId, true);
+        }
+    }
+
+    function handleTaskDragOver(e) {
+        e.preventDefault();
+        const afterElement = getDragAfterElementReverse(e.currentTarget, e.clientY);
+        const taskBeingDragged = document.querySelector('.task-card.dragging');
+
+        if (!taskBeingDragged) return;
+
+        if (afterElement) {
+            e.currentTarget.insertBefore(taskBeingDragged, afterElement);
+        } else {
+            e.currentTarget.appendChild(taskBeingDragged);
+        }
+    }
+
+    function handleTaskDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const taskId = e.dataTransfer.getData('text/plain');
+        const sourceCategoryId = e.dataTransfer.getData('source-category');
+        const targetCategoryId = e.currentTarget.id.replace('tasks-', '');
+
+        const tasks = Array.from(e.currentTarget.querySelectorAll('.task-card:not(.dragging)'));
+        const afterElement = getDragAfterElementReverse(e.currentTarget, e.clientY);
+        let newPosition = tasks.length;
+
+        if (afterElement) {
+            const afterIndex = tasks.findIndex(task => task === afterElement);
+            newPosition = afterIndex >= 0 ? afterIndex : tasks.length;
+        }
+
+        moveTask(taskId, sourceCategoryId, targetCategoryId, newPosition)
+            .catch(error => {
+                console.error('Move error:', error);
+                loadTasksForCategory(sourceCategoryId);
+                if (sourceCategoryId !== targetCategoryId) {
+                    loadTasksForCategory(targetCategoryId);
+                }
+            });
+
+        document.querySelectorAll('.task-card').forEach(t => t.classList.remove('dragging'));
+    }
+
+    function handleTaskDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+        e.dataTransfer.setData('source-category', e.target.closest('[id^="tasks-"]').id.replace('tasks-', ''));
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.classList.add('dragging');
+    }
+
+    function handleTaskDragEnd(e) {
+        document.querySelectorAll('.task-card').forEach(t => t.classList.remove('dragging'));
+    }
+
+    // Функция для определения позиции при перетаскивании
+    function getDragAfterElementReverse(container, y) {
+        const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+        const reversedElements = [...draggableElements].reverse();
+
+        return reversedElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Перемещение задачи
+    async function moveTask(taskId, sourceCategoryId, targetCategoryId, newPosition) {
+        const tasks = Array.from(document.querySelectorAll(`#tasks-${targetCategoryId} .task-card:not(.dragging)`));
+        const backendPosition = tasks.length - newPosition;
+
+        const response = await fetch(
+            `/api/v1/projects/${projectId}/categories/${sourceCategoryId}/tasks/${taskId}/move`,
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    categoryId: targetCategoryId,
+                    position: backendPosition
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to move task');
+        }
+
+        loadTasksForCategory(sourceCategoryId);
+        if (sourceCategoryId !== targetCategoryId) {
+            loadTasksForCategory(targetCategoryId);
+        }
+    }
+
+    // Управление модальными окнами категорий
     function openCreateCategoryModal() {
         document.getElementById('createCategoryModal').classList.remove('hidden');
     }
 
     function closeCreateCategoryModal() {
         document.getElementById('createCategoryModal').classList.add('hidden');
+        document.getElementById('createCategoryForm').reset();
     }
 
     function openEditCategoryModal(categoryId) {
@@ -449,41 +823,6 @@
         }
     }
 
-    // Обработка формы редактирования
-    document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const categoryId = document.getElementById('editingCategoryId').value;
-        const formData = new FormData(e.target);
-        const request = {
-            name: formData.get('name'),
-            color: formData.get('colorText')
-        };
-
-        // Валидация
-        if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(request.color)) {
-            showError('Invalid color format. Use HEX like #FF0000');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(request)
-            });
-
-            if (response.ok) {
-                closeEditCategoryModal();
-                loadCategories(); // Перезагружаем список категорий
-            } else {
-                const error = await response.json();
-                showError(error.message || 'Failed to update category');
-            }
-        } catch (error) {
-            showError('Network error');
-        }
-    });
-
     function closeEditCategoryModal() {
         document.getElementById('editCategoryModal').classList.add('hidden');
     }
@@ -492,7 +831,6 @@
         const modal = document.getElementById('deleteCategoryModal');
         document.getElementById('categoryToDeleteId').value = categoryId;
 
-        // Заполняем select доступными категориями
         const select = modal.querySelector('select');
         select.innerHTML = '';
         categories
@@ -507,35 +845,11 @@
         modal.classList.remove('hidden');
     }
 
-    document.getElementById('deleteCategoryForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const categoryId = document.getElementById('categoryToDeleteId').value;
-        const newCategoryId = this.newCategoryId.value;
-
-        try {
-            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newCategoryId })
-            });
-
-            if (response.ok) {
-                showNotification('Success', 'Category deleted', 'success');
-                closeDeleteCategoryModal();
-                await loadCategories();
-            } else {
-                const err = await response.json();
-                showNotification('Error', err.message || 'Failed to delete category', 'error');
-            }
-        } catch (error) {
-            showNotification('Error', 'Network error', 'error');
-        }
-    });
-
     function closeDeleteCategoryModal() {
         document.getElementById('deleteCategoryModal').classList.add('hidden');
     }
 
+    // Управление модальными окнами задач
     function openCreateTaskModal(categoryId) {
         document.getElementById('taskCategoryId').value = categoryId;
         document.getElementById('createTaskModal').classList.remove('hidden');
@@ -543,122 +857,319 @@
 
     function closeCreateTaskModal() {
         document.getElementById('createTaskModal').classList.add('hidden');
+        document.getElementById('createTaskForm').reset();
     }
 
-    function setupDragAndDrop() {
-        const tasksContainers = document.querySelectorAll('[id^="tasks-"]');
+    async function openTaskModal(taskId, categoryId) {
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}/tasks/${taskId}`);
+            if (response.ok) {
+                currentTask = await response.json();
+                currentCategoryId = categoryId;
 
-        tasksContainers.forEach(container => {
+                // Заполняем данные задачи
+                document.getElementById('taskName').value = currentTask.name;
+                document.getElementById('taskDescription').value = currentTask.description || '';
 
-            container.addEventListener('scroll', function() {
-                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50 &&
-                    !tasksLoading[this.id.replace('tasks-', '')] &&
-                    hasMoreTasks[this.id.replace('tasks-', '')]) {
-                    loadTasksForCategory(this.id.replace('tasks-', ''), true);
-                }
-            });
+                // Настраиваем автосохранение
+                document.getElementById('taskName').onchange = saveTaskChanges;
+                document.getElementById('taskDescription').onchange = saveTaskChanges;
+                document.getElementById('taskDeadline').onchange = saveTaskChanges;
 
-            container.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                const afterElement = getDragAfterElement(container, e.clientY);
-                const taskBeingDragged = document.querySelector('.dragging');
-
-                if (!taskBeingDragged) return;
-
-                // Временно перемещаем элемент для визуального эффекта
-                if (afterElement) {
-                    container.insertBefore(taskBeingDragged, afterElement);
+                if (currentTask.deadline) {
+                    const deadlineDate = new Date(currentTask.deadline);
+                    const formattedDeadline = deadlineDate.toISOString().slice(0, 16);
+                    document.getElementById('taskDeadline').value = formattedDeadline;
                 } else {
-                    container.appendChild(taskBeingDragged);
-                }
-            });
-
-            container.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                const taskId = e.dataTransfer.getData('text/plain');
-                const sourceCategoryId = e.dataTransfer.getData('source-category');
-                const targetCategoryId = e.currentTarget.id.replace('tasks-', '');
-
-                // Получаем все задачи в целевой категории (кроме перетаскиваемой)
-                const tasksInTarget = Array.from(e.currentTarget.querySelectorAll('.task-card:not(.dragging)'));
-
-                // Определяем afterElement заново, так как DOM уже изменился
-                const afterElement = getDragAfterElement(e.currentTarget, e.clientY);
-
-                // Вычисляем новую позицию:
-                let newPosition;
-                if (!afterElement) {
-                    // Если бросаем в конец списка
-                    newPosition = tasksInTarget.length;
-                } else {
-                    // Находим индекс элемента, перед которым вставляем
-                    const afterIndex = tasksInTarget.findIndex(task => task === afterElement);
-                    newPosition = afterIndex >= 0 ? afterIndex : tasksInTarget.length;
+                    document.getElementById('taskDeadline').value = '';
                 }
 
-                console.log(JSON.stringify({
-                    categoryId: targetCategoryId,
-                    position: newPosition
-                }))
+                await loadSubtaskGroups(taskId);
+                document.getElementById('taskModal').classList.remove('hidden');
+            } else {
+                throw new Error('Failed to load task');
+            }
+        } catch (error) {
+            showNotification('Error', 'Failed to load task details', 'error');
+        }
+    }
 
-                try {
-                    const response = await fetch(
-                        `/api/v1/projects/${projectId}/categories/${sourceCategoryId}/tasks/${taskId}/move`,
-                        {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                categoryId: targetCategoryId,
-                                position: newPosition
-                            })
-                        }
-                    );
+    function closeTaskModal() {
+        document.getElementById('taskModal').classList.add('hidden');
+        currentTask = null;
+        currentCategoryId = null;
+        subtaskGroups = [];
+    }
 
-                    if (!response.ok) {
-                        throw new Error('Server returned error');
-                    }
+    // Сохранение изменений задачи
+    async function saveTaskChanges() {
+        const updatedTask = {
+            name: document.getElementById('taskName').value,
+            description: document.getElementById('taskDescription').value,
+            deadline: document.getElementById('taskDeadline').value ? new Date(document.getElementById('taskDeadline').value) : null
+        };
 
-                    // Обновляем обе категории
-                    loadTasksForCategory(sourceCategoryId);
-                    loadTasksForCategory(targetCategoryId);
-
-                } catch (error) {
-                    console.error('Move error:', error);
-                    // Восстанавливаем исходное состояние
-                    loadTasksForCategory(sourceCategoryId);
-                    if (sourceCategoryId !== targetCategoryId) {
-                        loadTasksForCategory(targetCategoryId);
-                    }
-                    showError('Ошибка при перемещении задачи');
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedTask)
                 }
-            });
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to update task');
+            }
+
+            // Обновляем задачу в списке
+            const taskElement = document.querySelector(`[data-task-id="${currentTask.id}"]`);
+            if (taskElement) {
+                const taskName = taskElement.querySelector(".task-name");
+                const taskDeadline = taskElement.querySelector(".task-deadline");
+
+                taskName.textContent = updatedTask.name;
+                taskDeadline.textContent = updatedTask.deadline ?
+                    new Date(updatedTask.deadline).toLocaleDateString() : 'No deadline';
+            }
+        } catch (error) {
+            showNotification('Error', 'Failed to save task changes', 'error');
+        }
+    }
+
+    // Работа с подзадачами
+    async function loadSubtaskGroups(taskId) {
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${taskId}/groups`
+            );
+
+            if (response.ok) {
+                subtaskGroups = await response.json();
+
+                // Загружаем подзадачи для каждой группы
+                for (const group of subtaskGroups) {
+                    group.subtasks = await loadSubtasksForGroup(group.id);
+                }
+
+                renderSubtaskGroups();
+                setupTaskModalDragAndDrop();
+            } else {
+                throw new Error('Failed to load subtask groups');
+            }
+        } catch (error) {
+            showNotification('Error', 'Failed to load subtask groups', 'error');
+        }
+    }
+
+    async function loadSubtasksForGroup(groupId) {
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask`
+            );
+
+            if (response.ok) {
+                return await response.json();
+            }
+            return [];
+        } catch (error) {
+            showNotification('Error', 'Failed to load subtasks', 'error');
+            return [];
+        }
+    }
+
+    function renderSubtaskGroups() {
+        const container = document.getElementById('subtaskGroupsContainer');
+        container.innerHTML = '';
+
+        subtaskGroups.forEach(group => {
+            const groupElement = document.createElement('div');
+            groupElement.className = 'subtask-group';
+            groupElement.dataset.groupId = group.id;
+
+            groupElement.innerHTML = `
+                <div class="subtask-group-header">
+                    <div class="flex items-center">
+                        <span class="drag-handle">☰</span>
+                        <h4 class="font-medium">${group.name}</h4>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="openCreateSubtaskModal('${group.id}')"
+                                class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded">
+                            + Add Subtask
+                        </button>
+                        <button onclick="deleteSubtaskGroup('${group.id}')"
+                                class="text-xs px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                <div class="subtask-group-content" id="subtasks-${group.id}">
+                    <!-- Подзадачи будут здесь -->
+                </div>
+            `;
+
+            container.appendChild(groupElement);
+            renderSubtasks(group.id, group.subtasks || []);
+        });
+    }
+
+    async function renderSubtasks(groupId, subtasks) {
+        const container = document.getElementById(`subtasks-${groupId}`);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!subtasks || subtasks.length === 0) {
+            subtasks = await loadSubtasksForGroup(groupId);
+        }
+
+        subtasks.forEach(subtask => {
+            const subtaskElement = document.createElement('div');
+            subtaskElement.className = 'subtask-item';
+            subtaskElement.dataset.subtaskId = subtask.id;
+
+            subtaskElement.innerHTML = `
+                <span class="drag-handle">☰</span>
+                <input type="checkbox" ${subtask.completed ? 'checked' : ''}
+                       class="subtask-checkbox"
+                       onchange="toggleSubtaskStatus('${groupId}', '${subtask.id}', this.checked)">
+                <span class="${subtask.completed ? 'line-through text-slate-400' : ''}">
+                    ${subtask.name}
+                </span>
+                <div class="subtask-actions">
+                    <button onclick="deleteSubtask('${groupId}', '${subtask.id}')"
+                            class="text-xs px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded">
+                        Delete
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(subtaskElement);
+        });
+    }
+
+    // Настройка drag-and-drop в модальном окне задачи
+    function setupTaskModalDragAndDrop() {
+        const groupsContainer = document.getElementById('subtaskGroupsContainer');
+
+        // Удаляем старые обработчики
+        groupsContainer.removeEventListener('dragover', handleGroupDragOver);
+        groupsContainer.removeEventListener('drop', handleGroupDrop);
+
+        // Добавляем новые обработчики
+        groupsContainer.addEventListener('dragover', handleGroupDragOver);
+        groupsContainer.addEventListener('drop', handleGroupDrop);
+
+        // Обработчики для групп подзадач
+        groupsContainer.querySelectorAll('.subtask-group').forEach(group => {
+            group.setAttribute('draggable', 'true');
+
+            // Удаляем старые обработчики
+            group.removeEventListener('dragstart', handleGroupDragStart);
+            group.removeEventListener('dragend', handleGroupDragEnd);
+
+            // Добавляем новые обработчики
+            group.addEventListener('dragstart', handleGroupDragStart);
+            group.addEventListener('dragend', handleGroupDragEnd);
         });
 
-        // Обработчики для задач
-        document.querySelectorAll('.task-card').forEach(task => {
-            task.setAttribute('draggable', 'true');
+        // Обработчики для подзадач
+        document.querySelectorAll('.subtask-group-content').forEach(container => {
+            // Удаляем старые обработчики
+            container.removeEventListener('dragover', handleSubtaskDragOver);
+            container.removeEventListener('drop', handleSubtaskDrop);
 
-            task.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', task.dataset.taskId);
-                e.dataTransfer.setData('source-category', task.closest('[id^="tasks-"]').id.replace('tasks-', ''));
-                e.dataTransfer.effectAllowed = 'move';
-                task.classList.add('dragging');
+            // Добавляем новые обработчики
+            container.addEventListener('dragover', handleSubtaskDragOver);
+            container.addEventListener('drop', handleSubtaskDrop);
 
-                // Фиксируем исходную позицию
-                task.dataset.originalCategory = task.closest('[id^="tasks-"]').id.replace('tasks-', '');
-            });
+            container.querySelectorAll('.subtask-item').forEach(subtask => {
+                subtask.setAttribute('draggable', 'true');
 
-            task.addEventListener('dragend', () => {
-                document.querySelectorAll('.task-card').forEach(t => {
-                    t.classList.remove('dragging');
-                });
+                // Удаляем старые обработчики
+                subtask.removeEventListener('dragstart', handleSubtaskDragStart);
+                subtask.removeEventListener('dragend', handleSubtaskDragEnd);
+
+                // Добавляем новые обработчики
+                subtask.addEventListener('dragstart', handleSubtaskDragStart);
+                subtask.addEventListener('dragend', handleSubtaskDragEnd);
             });
         });
     }
 
-    // Улучшенная функция определения позиции
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+    // Обработчики событий для групп подзадач
+    function handleGroupDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.groupId);
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.classList.add('dragging');
+        setTimeout(() => e.target.style.opacity = '0.4', 0);
+    }
+
+    function handleGroupDragEnd(e) {
+        e.target.classList.remove('dragging');
+        e.target.style.opacity = '1';
+    }
+
+    function handleGroupDragOver(e) {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(e.currentTarget, e.clientY, '.subtask-group');
+        const draggedGroup = document.querySelector('.subtask-group.dragging');
+
+        if (draggedGroup) {
+            if (afterElement) {
+                e.currentTarget.insertBefore(draggedGroup, afterElement);
+            } else {
+                e.currentTarget.appendChild(draggedGroup);
+            }
+        }
+    }
+
+    function handleGroupDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        saveGroupsOrder();
+    }
+
+    // Обработчики событий для подзадач
+    function handleSubtaskDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.subtaskId);
+        e.dataTransfer.setData('group-id', e.target.closest('.subtask-group').dataset.groupId);
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.classList.add('dragging');
+        setTimeout(() => e.target.style.opacity = '0.4', 0);
+    }
+
+    function handleSubtaskDragEnd(e) {
+        e.target.classList.remove('dragging');
+        e.target.style.opacity = '1';
+    }
+
+    function handleSubtaskDragOver(e) {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(e.currentTarget, e.clientY, '.subtask-item');
+        const draggedSubtask = document.querySelector('.subtask-item.dragging');
+
+        if (draggedSubtask && draggedSubtask.parentElement === e.currentTarget) {
+            if (afterElement) {
+                e.currentTarget.insertBefore(draggedSubtask, afterElement);
+            } else {
+                e.currentTarget.appendChild(draggedSubtask);
+            }
+        }
+    }
+
+    function handleSubtaskDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const groupId = e.currentTarget.closest('.subtask-group').dataset.groupId;
+        saveSubtasksOrder(groupId);
+    }
+
+    // Функция для определения позиции при перетаскивании
+    function getDragAfterElement(container, y, selector) {
+        const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
 
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
@@ -672,8 +1183,69 @@
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
-    // Обработка форм
-    document.getElementById('createCategoryForm').addEventListener('submit', async (e) => {
+    // Сохранение порядка групп
+    async function saveGroupsOrder() {
+        const groupOrder = Array.from(document.querySelectorAll('.subtask-group'))
+            .map(group => group.dataset.groupId);
+
+        try {
+            await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/order`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderedGroupIds: groupOrder })
+                }
+            );
+        } catch (error) {
+            showNotification('Error', 'Failed to save groups order', 'error');
+        }
+    }
+
+    // Сохранение порядка подзадач
+    async function saveSubtasksOrder(groupId) {
+        const container = document.getElementById(`subtasks-${groupId}`);
+        if (!container) return;
+
+        const subtaskOrder = Array.from(container.querySelectorAll('.subtask-item'))
+            .map(subtask => subtask.dataset.subtaskId);
+
+        try {
+            await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask/order`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderedSubtaskIds: subtaskOrder })
+                }
+            );
+        } catch (error) {
+            showNotification('Error', 'Failed to save subtasks order', 'error');
+        }
+    }
+
+    // Управление модальными окнами для подзадач
+    function openCreateSubtaskGroupModal() {
+        document.getElementById('createSubtaskGroupModal').classList.remove('hidden');
+    }
+
+    function closeCreateSubtaskGroupModal() {
+        document.getElementById('createSubtaskGroupModal').classList.add('hidden');
+        document.getElementById('createSubtaskGroupForm').reset();
+    }
+
+    function openCreateSubtaskModal(groupId) {
+        document.getElementById('subtaskGroupId').value = groupId;
+        document.getElementById('createSubtaskModal').classList.remove('hidden');
+    }
+
+    function closeCreateSubtaskModal() {
+        document.getElementById('createSubtaskModal').classList.add('hidden');
+        document.getElementById('createSubtaskForm').reset();
+    }
+
+    // Обработчики форм
+    async function handleCreateCategory(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
         const request = {
@@ -681,9 +1253,8 @@
             color: formData.get('colorText')
         };
 
-        // Валидация
         if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(request.color)) {
-            showError('Invalid color format. Use HEX like #FF0000');
+            showNotification('Error', 'Invalid color format. Use HEX like #FF0000', 'error');
             return;
         }
 
@@ -697,20 +1268,21 @@
             if (response.ok) {
                 closeCreateCategoryModal();
                 loadCategories();
+                showNotification('Success', 'Category created', 'success');
             } else {
                 const error = await response.json();
-                showError(error.message || 'Failed to create category');
+                showNotification('Error', error.message || 'Failed to create category', 'error');
             }
         } catch (error) {
-            showError('Network error');
+            showNotification('Error', 'Network error', 'error');
         }
-    });
+    }
 
-    document.getElementById('editCategoryForm').addEventListener('submit', async function (e) {
+    async function handleEditCategory(e) {
         e.preventDefault();
         const id = document.getElementById('editingCategoryId').value;
-        const name = this.name.value;
-        const color = this.color.value;
+        const name = e.target.name.value;
+        const color = e.target.colorText.value;
 
         try {
             const response = await fetch(`/api/v1/projects/${projectId}/categories/${id}`, {
@@ -730,14 +1302,38 @@
         } catch (error) {
             showNotification('Error', 'Network error', 'error');
         }
-    });
+    }
 
-    document.getElementById('createTaskForm').addEventListener('submit', async (e) => {
+    async function handleDeleteCategory(e) {
+        e.preventDefault();
+        const categoryId = document.getElementById('categoryToDeleteId').value;
+        const newCategoryId = e.target.newCategoryId.value;
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newCategoryId })
+            });
+
+            if (response.ok) {
+                showNotification('Success', 'Category deleted', 'success');
+                closeDeleteCategoryModal();
+                await loadCategories();
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to delete category', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    async function handleCreateTask(e) {
         e.preventDefault();
         const categoryId = document.getElementById('taskCategoryId').value;
         const formData = new FormData(e.target);
 
-        // Преобразование даты дедлайна
         const deadlineValue = formData.get('deadline');
         const deadline = deadlineValue ? new Date(deadlineValue).toISOString() : null;
 
@@ -755,81 +1351,183 @@
             });
 
             if (response.ok) {
-                const taskId = await response.text();
                 closeCreateTaskModal();
-                loadTasksForCategory(categoryId); // Перезагружаем задачи для текущей категории
+                loadTasksForCategory(categoryId);
                 showNotification('Success', 'Task created successfully', 'success');
             } else {
                 const error = await response.json();
-                showError(error.message || 'Failed to create task');
+                showNotification('Error', error.message || 'Failed to create task', 'error');
             }
         } catch (error) {
-            showError('Network error');
+            showNotification('Error', 'Network error', 'error');
         }
-    });
+    }
 
-    const colorPicker = document.querySelector('input[type="color"]');
-    const colorText = document.querySelector('input[name="colorText"]');
-
-    colorPicker.addEventListener('input', (e) => {
-        colorText.value = e.target.value;
-    });
-
-    colorText.addEventListener('input', (e) => {
-        if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(e.target.value)) {
-            colorPicker.value = e.target.value;
-        }
-    });
-
-    document.getElementById('deleteCategoryForm').addEventListener('submit', async (e) => {
+    async function handleCreateSubtaskGroup(e) {
         e.preventDefault();
-        const categoryId = document.getElementById('categoryToDeleteId').value;
-        const newCategoryId = e.target.elements.newCategoryId.value;
+        const formData = new FormData(e.target);
+        const request = {
+            name: formData.get('name')
+        };
 
         try {
-            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newCategoryId })
-            });
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/create`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                }
+            );
 
             if (response.ok) {
-                closeDeleteCategoryModal();
-                loadCategories();
+                closeCreateSubtaskGroupModal();
+                await loadSubtaskGroups(currentTask.id);
+                showNotification('Success', 'Subtask group created', 'success');
             } else {
                 const error = await response.json();
-                showError(error.message || 'Failed to delete category');
+                showNotification('Error', error.message || 'Failed to create group', 'error');
             }
         } catch (error) {
-            showError('Network error');
+            showNotification('Error', 'Network error', 'error');
         }
-    });
+    }
 
-    // Инициализация
-    document.addEventListener('DOMContentLoaded', () => {
-        loadCategories();
-    });
+    async function handleCreateSubtask(e) {
+        e.preventDefault();
+        const groupId = document.getElementById('subtaskGroupId').value;
+        const formData = new FormData(e.target);
+        const request = {
+            name: formData.get('name')
+        };
 
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask/create`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                }
+            );
+
+            if (response.ok) {
+                closeCreateSubtaskModal();
+                await loadSubtaskGroups(currentTask.id);
+                showNotification('Success', 'Subtask created', 'success');
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to create subtask', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    async function handleDeleteTask() {
+        if (!confirm('Are you sure you want to delete this task and all its subtasks?')) return;
+
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}`,
+                { method: 'DELETE' }
+            );
+
+            if (response.ok) {
+                showNotification('Success', 'Task deleted', 'success');
+                document.querySelector(`[data-task-id="${currentTask.id}"]`).remove();
+                closeTaskModal();
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to delete task', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    // Управление подзадачами
+    async function deleteSubtaskGroup(groupId) {
+        if (!confirm('Are you sure you want to delete this group and all its subtasks?')) return;
+
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}`,
+                { method: 'DELETE' }
+            );
+
+            if (response.ok) {
+                await loadSubtaskGroups(currentTask.id);
+                showNotification('Success', 'Group deleted', 'success');
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to delete group', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    async function deleteSubtask(groupId, subtaskId) {
+        if (!confirm('Are you sure you want to delete this subtask?')) return;
+
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask/${subtaskId}`,
+                { method: 'DELETE' }
+            );
+
+            if (response.ok) {
+                await loadSubtaskGroups(currentTask.id);
+                showNotification('Success', 'Subtask deleted', 'success');
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to delete subtask', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    async function toggleSubtaskStatus(groupId, subtaskId, completed) {
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask/${subtaskId}/status?completed=${completed}`,
+                { method: 'PATCH' }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to update subtask', 'error');
+                document.querySelector(`.subtask-item[data-subtask-id="${subtaskId}"] .subtask-checkbox`).checked = !completed;
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+            document.querySelector(`.subtask-item[data-subtask-id="${subtaskId}"] .subtask-checkbox`).checked = !completed;
+        }
+    }
+
+    // Уведомления
     function showNotification(title, message, type) {
-        // const notification = document.getElementById('notification');
-        // const notificationTitle = document.getElementById('notification-title');
-        // const notificationMessage = document.getElementById('notification-message');
-        // const notificationIcon = document.getElementById('notification-icon');
-        //
-        // notificationTitle.textContent = title;
-        // notificationMessage.textContent = message;
-        //
-        // notification.className = 'notification';
-        // notification.classList.add(type);
-        // notificationIcon.textContent = type === 'success' ? '✓' : '✗';
-        //
-        // notification.classList.remove('hidden');
-        // notification.classList.add('show');
-        //
-        // setTimeout(() => {
-        //     notification.classList.remove('show');
-        //     setTimeout(() => notification.classList.add('hidden'), 300);
-        // }, 5000);
+        const notification = document.getElementById('notification');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        const notificationIcon = document.getElementById('notification-icon');
+
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+
+        notification.className = 'notification';
+        notification.classList.add(type);
+        notificationIcon.textContent = type === 'success' ? '✓' : '✗';
+
+        notification.classList.remove('hidden');
+        notification.classList.add('show');
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.classList.add('hidden'), 300);
+        }, 5000);
     }
 </script>
 </body>

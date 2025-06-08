@@ -7,6 +7,7 @@ import ru.itis.semesterwork.second.dto.request.subtask.CreateSubtaskRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskOrderRequest;
 import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.exception.SubtaskNotFoundException;
 import ru.itis.semesterwork.second.mapper.SubtaskMapper;
 import ru.itis.semesterwork.second.model.SubtaskEntity;
 import ru.itis.semesterwork.second.model.SubtaskGroupEntity;
@@ -14,7 +15,6 @@ import ru.itis.semesterwork.second.repository.SubtaskRepository;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,6 +43,7 @@ public class SubtaskService {
         SubtaskEntity subtaskEntity = subtaskMapper.toEntity(request);
         SubtaskGroupEntity subtaskGroupEntity = hierarchyValidationService.validateSubtaskGroupHierarchy(projectId, categoryId, taskId, groupId);
         subtaskEntity.setSubtaskGroup(subtaskGroupEntity);
+        subtaskEntity.setPosition(subtaskRepository.countBySubtaskGroupInnerId(groupId));
         return subtaskRepository.save(subtaskEntity).getInnerId();
     }
 
@@ -55,8 +56,11 @@ public class SubtaskService {
 
     @Transactional
     public void deleteByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId) {
-        SubtaskEntity subtaskEntity = hierarchyValidationService.validateSubtaskHierarchy(projectId, categoryId, taskId, groupId, innerId);
-        subtaskRepository.delete(subtaskEntity);
+        SubtaskEntity subtask = hierarchyValidationService.validateSubtaskHierarchy(projectId, categoryId, taskId, groupId, innerId);
+        Integer pos = subtask.getPosition();
+
+        subtaskRepository.updatePositionsMinus(groupId, pos);
+        subtaskRepository.delete(subtask);
     }
 
     // TODO аналогично проверять uuid
@@ -80,5 +84,15 @@ public class SubtaskService {
         }
 
         subtaskRepository.saveAll(subtaskEntities);
+    }
+
+    @Transactional
+    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
+        System.out.println();
+        SubtaskEntity subtaskEntity = hierarchyValidationService.validateSubtaskHierarchy(projectId, categoryId, taskId, groupId, innerId);
+        if (!completed.equals(subtaskEntity.getCompleted())) {
+            subtaskEntity.setCompleted(completed);
+            subtaskRepository.save(subtaskEntity);
+        }
     }
 }

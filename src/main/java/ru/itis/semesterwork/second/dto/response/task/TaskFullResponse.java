@@ -2,7 +2,7 @@ package ru.itis.semesterwork.second.dto.response.task;
 
 import ru.itis.semesterwork.second.model.TaskStatus;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public record TaskFullResponse(
@@ -10,7 +10,7 @@ public record TaskFullResponse(
         String name,
         String description,
         TaskStatus status,
-        LocalDateTime created,
-        LocalDateTime deadline,
+        Instant created,
+        Instant deadline,
         String author
 ) {}

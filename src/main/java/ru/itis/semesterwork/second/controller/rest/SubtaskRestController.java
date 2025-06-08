@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class TaskGroupRestController implements SubtaskRestAPI {
+public class SubtaskRestController implements SubtaskRestAPI {
 
     private final SubtaskService subtaskService;
 
@@ -46,5 +46,10 @@ public class TaskGroupRestController implements SubtaskRestAPI {
     @Override
     public void updateOrder(UUID projectId, UUID categoryId, UUID taskId, UUID groupId, UpdateSubtaskOrderRequest request) {
         subtaskService.updateOrder(projectId, categoryId, taskId, groupId, request);
+    }
+
+    @Override
+    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
+        subtaskService.changeStatus(innerId, projectId, categoryId, taskId, groupId, completed);
     }
 }

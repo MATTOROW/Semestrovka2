@@ -6,9 +6,9 @@ import ru.itis.semesterwork.second.dto.request.task.UpdateTaskInfoRequest;
 import ru.itis.semesterwork.second.dto.response.task.TaskFullResponse;
 import ru.itis.semesterwork.second.dto.response.task.TaskShortResponse;
 import ru.itis.semesterwork.second.model.TaskEntity;
+import ru.itis.semesterwork.second.validation.model.NullableField;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
+import java.time.Instant;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
@@ -33,15 +33,15 @@ public interface TaskMapper {
     void updateTaskEntity(UpdateTaskInfoRequest request, @MappingTarget TaskEntity taskEntity);
 
     @Condition
-    default boolean isPresent(Optional<?> optional) {
+    default boolean isPresent(NullableField<?> optional) {
         return optional.isPresent();
     }
 
-    default String mapOptionalToString(Optional<String> optional) {
-        return optional.orElse(null);
+    default String mapOptionalToString(NullableField<String> optional) {
+        return optional.value();
     }
 
-    default LocalDateTime mapOptionalToLocalDateTime(Optional<LocalDateTime> optional) {
-        return optional.orElse(null);
+    default Instant mapOptionalToLocalDateTime(NullableField<Instant> optional) {
+        return optional.value();
     }
 }

@@ -48,6 +48,11 @@ public class ProjectEntity {
         member.setProject(this);
     }
 
+    public void addCategory(CategoryEntity category) {
+        categories.add(category);
+        category.setProject(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
