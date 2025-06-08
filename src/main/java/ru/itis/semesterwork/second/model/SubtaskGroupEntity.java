@@ -3,9 +3,7 @@ package ru.itis.semesterwork.second.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "subtask_group")
@@ -30,7 +28,7 @@ public class SubtaskGroupEntity {
     @Column(nullable = false)
     private Boolean completed;
 
-    @Column(nullable = false)
+    @Column
     private Integer position;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,7 +37,8 @@ public class SubtaskGroupEntity {
 
     @OneToMany(mappedBy = "subtaskGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<SubtaskEntity> subtasks = new HashSet<>();
+    @OrderBy("position ASC")
+    private List<SubtaskEntity> subtasks = new ArrayList<>();
 
     public void addSubtask(SubtaskEntity subtask) {
         subtasks.add(subtask);

@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ru.itis.semesterwork.second.dto.request.task.CreateTaskRequest;
+import ru.itis.semesterwork.second.dto.request.task.UpdateTaskCategoryRequest;
 import ru.itis.semesterwork.second.dto.request.task.UpdateTaskInfoRequest;
 import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.dto.response.task.TaskFullResponse;
@@ -23,7 +24,7 @@ public interface TaskRestAPI {
                                   @PathVariable("projectId") UUID projectId,
                                   @PathVariable("categoryId") UUID categoryId);
 
-    // Получить список задач с пагинацией и фильтрацией по статусу и категории
+    // Получить список задач с пагинацией и фильтрацией по категории
     @GetMapping("/search")
     @ResponseStatus(HttpStatus.OK)
     CustomPageResponseDto<TaskShortResponse> searchTasks(
@@ -49,6 +50,15 @@ public interface TaskRestAPI {
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,
             @RequestBody UpdateTaskInfoRequest request
+    );
+
+    @PatchMapping("/{innerId}/move")
+    @ResponseStatus(HttpStatus.OK)
+    void moveTask(
+            @PathVariable("innerId") UUID innerId,
+            @PathVariable("projectId") UUID projectId,
+            @PathVariable("categoryId") UUID categoryId,
+            @RequestBody UpdateTaskCategoryRequest request
     );
 
     // Удалить задачу по UUID

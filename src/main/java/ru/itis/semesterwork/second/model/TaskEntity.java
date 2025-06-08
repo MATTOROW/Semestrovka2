@@ -56,6 +56,9 @@ public class TaskEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private AccountEntity author;
 
+    @Column
+    private Integer position;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<SubtaskGroupEntity> subtaskGroups = new HashSet<>();

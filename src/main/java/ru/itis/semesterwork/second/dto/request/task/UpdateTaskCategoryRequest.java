@@ -7,5 +7,8 @@ import java.util.UUID;
 public record UpdateTaskCategoryRequest(
 
         @NotNull(message = "Category ID is required")
-        UUID categoryId
+        UUID categoryId,
+
+        @NotNull
+        Integer position
 ) {}

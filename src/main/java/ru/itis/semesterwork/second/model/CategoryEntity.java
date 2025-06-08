@@ -3,9 +3,7 @@ package ru.itis.semesterwork.second.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "category")
@@ -30,7 +28,8 @@ public class CategoryEntity {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<TaskEntity> tasks = new HashSet<>();
+    @OrderBy("position ASC")
+    private List<TaskEntity> tasks = new ArrayList<>();
 
     @Column(nullable = false)
     private String name;

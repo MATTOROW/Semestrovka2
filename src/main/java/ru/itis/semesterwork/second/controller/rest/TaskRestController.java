@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.TaskRestAPI;
 import ru.itis.semesterwork.second.dto.request.task.CreateTaskRequest;
+import ru.itis.semesterwork.second.dto.request.task.UpdateTaskCategoryRequest;
 import ru.itis.semesterwork.second.dto.request.task.UpdateTaskInfoRequest;
 import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.dto.response.task.TaskFullResponse;
@@ -41,6 +42,11 @@ public class TaskRestController implements TaskRestAPI {
     @Override
     public void patchTask(UUID innerId, UUID projectId, UUID categoryId, UpdateTaskInfoRequest request) {
         taskService.patchByInnerId(innerId, projectId, categoryId, request);
+    }
+
+    @Override
+    public void moveTask(UUID innerId, UUID projectId, UUID categoryId, UpdateTaskCategoryRequest request) {
+        taskService.changeTaskCategory(innerId, projectId, categoryId, request);
     }
 
     @Override

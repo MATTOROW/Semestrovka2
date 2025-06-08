@@ -64,7 +64,7 @@ public class SubtaskService {
     public void updateOrder(UUID projectId, UUID categoryId, UUID taskId, UUID groupId, UpdateSubtaskOrderRequest request) {
         SubtaskGroupEntity subtaskGroupEntity = hierarchyValidationService.validateSubtaskGroupHierarchy(projectId, categoryId, taskId, groupId);
 
-        Set<SubtaskEntity> subtaskEntities = subtaskGroupEntity.getSubtasks();
+        List<SubtaskEntity> subtaskEntities = subtaskGroupEntity.getSubtasks();
 
         Map<UUID, SubtaskEntity> subtaskMap = subtaskEntities.stream()
                 .collect(Collectors.toMap(SubtaskEntity::getInnerId, Function.identity()));

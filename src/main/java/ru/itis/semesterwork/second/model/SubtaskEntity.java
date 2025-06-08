@@ -28,7 +28,7 @@ public class SubtaskEntity {
     @Column(nullable = false)
     private Boolean completed;
 
-    @Column(nullable = false)
+    @Column
     private Integer position;
 
     @ManyToOne(fetch = FetchType.LAZY)

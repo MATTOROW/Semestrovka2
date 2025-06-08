@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Projects | Task Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link th:href="@{/css/navbar.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        main {
+            padding-top: 5rem; /* Примерно высота вашего navbar (py-3 = 0.75rem + h-12 = 3rem + padding) */
+        }
+
+        .project-card {
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(148, 163, 184, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(135deg, #818cf8 0%, #c471f5 100%);
+        }
+        .input-field {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #818cf8;
+        }
+        .notification {
+            /* Стили из вашего примера */
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<main class="min-h-screen container mx-auto px-4 py-8 pt-12 md:pt-16">
+    <!-- Заголовок и кнопка создания -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold gradient-text">My Projects</h1>
+        <button onclick="openCreateModal()"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
+            + New Project
+        </button>
+    </div>
+
+    <!-- Поиск -->
+    <div class="mb-6">
+        <input type="text" id="searchInput" placeholder="Search projects..."
+               class="input-field w-full md:w-1/3 rounded-lg px-4 py-2 text-slate-200"
+               oninput="debouncedSearch()">
+    </div>
+
+    <!-- Список проектов -->
+    <div id="projectsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Проекты будут загружаться через JS -->
+    </div>
+
+    <!-- Пагинация -->
+    <div id="pagination" class="mt-8 flex justify-center">
+        <!-- Пагинация будет генерироваться динамически -->
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification hidden">
+        <!-- Как в вашем примере -->
+    </div>
+
+    <!-- Модальное окно создания проекта -->
+    <div id="createModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+            <h2 class="text-xl font-bold mb-4">Create New Project</h2>
+            <form id="createProjectForm">
+                <div class="mb-4">
+                    <label class="block text-sm mb-2">Project Name</label>
+                    <input type="text" name="name" required
+                           class="input-field w-full rounded-lg px-3 py-2">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm mb-2">Description</label>
+                    <textarea name="description"
+                              class="input-field w-full rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeCreateModal()"
+                            class="px-4 py-2 text-slate-400 hover:text-white">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                        Create
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Текущая страница и параметры
+    let currentPage = 0;
+    let totalPages = 1;
+    let searchQuery = '';
+    let debounceTimer;
+
+    // Загрузка проектов
+    async function loadProjects(page = 0, search = '') {
+        try {
+            const response = await fetch(`/api/v1/projects/my?page=${page}&size=6&search=${encodeURIComponent(search)}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                renderProjects(data.content);
+                renderPagination(data.totalPages, page);
+                currentPage = page;
+                totalPages = data.totalPages;
+                searchQuery = search;
+            } else {
+                showNotification('Error', 'Failed to load projects', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    function renderProjects(projects) {
+        const container = document.getElementById('projectsContainer');
+        container.innerHTML = '';
+
+        projects.forEach(project => {
+            const projectCard = document.createElement('div');
+            projectCard.className = 'project-card rounded-xl p-5 cursor-pointer';
+            projectCard.onclick = () => window.location.href = `/projects/${project.id}`;
+
+            projectCard.innerHTML = `
+            <h3 class="text-xl font-semibold mb-2 truncate">${project.name}</h3>
+            <p class="text-slate-400 text-sm mb-4 line-clamp-2">${project.description || 'No description'}</p>
+            <div class="text-sm text-slate-500">
+                <span>Created: ${formatDate(project.createdAt)}</span>
+            </div>
+        `;
+
+            container.appendChild(projectCard);
+        });
+    }
+
+    <!-- Новая функция для форматирования даты -->
+    function formatDate(instant) {
+        const date = new Date(instant);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Рендер пагинации
+    function renderPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        for (let i = 0; i < totalPages; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `mx-1 px-3 py-1 rounded ${i === currentPage ? 'bg-indigo-600' : 'bg-slate-700 hover:bg-slate-600'}`;
+            pageBtn.textContent = i + 1;
+            pageBtn.onclick = () => loadProjects(i, searchQuery);
+            pagination.appendChild(pageBtn);
+        }
+    }
+
+    // Поиск с дебаунсом
+    function debouncedSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            loadProjects(0, document.getElementById('searchInput').value);
+        }, 500);
+    }
+
+    // Управление модальным окном
+    function openCreateModal() {
+        document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+        document.getElementById('createModal').classList.add('hidden');
+    }
+
+    // Обработка формы создания
+    document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const request = {
+            name: formData.get('name'),
+            description: formData.get('description')
+        };
+
+        try {
+            const response = await fetch('/api/v1/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(request)
+            });
+
+            if (response.ok) {
+                const projectId = await response.text();
+                showNotification('Success', 'Project created', 'success');
+                closeCreateModal();
+                loadProjects(currentPage, searchQuery);
+            } else {
+                const error = await response.json();
+                showNotification('Error', error.message || 'Failed to create project', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    });
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProjects();
+    });
+
+    function showNotification(title, message, type) {
+        const notification = document.getElementById('notification');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        const notificationIcon = document.getElementById('notification-icon');
+
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+
+        notification.className = 'notification';
+        notification.classList.add(type);
+        notificationIcon.textContent = type === 'success' ? '✓' : '✗';
+
+        notification.classList.remove('hidden');
+        notification.classList.add('show');
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.classList.add('hidden'), 300);
+        }, 5000);
+    }
+</script>
+</body>
+</html>

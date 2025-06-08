@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${project.name} + ' | Task Tracker'">Project | Task Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link th:href="@{/css/navbar.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        :root {
+            --navbar-height: 4.5rem;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding-top: var(--navbar-height);
+        }
+        .project-header {
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .category-column {
+            min-width: 300px;
+            max-height: calc(100vh - var(--navbar-height) - 180px); /* 180px - примерный отступ для шапки и других элементов */
+            height: 100%;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tasks-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .category-footer {
+            padding: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+
+        .task-card {
+            background: rgba(51, 65, 85, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+
+        .task-card {
+            transition: transform 0.2s ease;
+        }
+        .task-card.dragging {
+            transform: rotate(3deg);
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(135deg, #818cf8 0%, #c471f5 100%);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .category-header {
+            border-top: 3px solid;
+        }
+
+        /* Стиль для скроллбара задач */
+        .tasks-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+        }
+
+        .tasks-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tasks-container::-webkit-scrollbar-thumb {
+            background-color: rgba(148, 163, 184, 0.3);
+            border-radius: 3px;
+        }
+
+        .input-field {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.2s ease;
+        }
+        .input-field:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 1px #818cf8;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<div th:replace="fragments/navbar :: navbar" class="fixed top-0 left-0 right-0 z-50 px-6 py-3 flex items-center justify-between h-[var(--navbar-height)]"></div>
+
+<!-- Шапка проекта -->
+<header class="project-header sticky top-[var(--navbar-height)] z-40 py-4 px-6">
+    <div class="container mx-auto flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold gradient-text" th:text="${project.name}">Project Name</h1>
+            <p class="text-slate-400 text-sm mt-1" th:text="${project.description} ?: 'No description'"></p>
+        </div>
+        <div class="flex space-x-4">
+            <button onclick="openSettings()" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
+                Settings
+            </button>
+            <button onclick="openCreateCategoryModal()"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
+                + Add Category
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Основное содержимое - горизонтальный скролл категорий -->
+<main class="container mx-auto px-4 py-6 overflow-x-auto scrollbar-hide">
+    <div id="categoriesContainer" class="flex space-x-4 pb-4">
+        <!-- Категории будут загружаться здесь -->
+    </div>
+</main>
+
+<div id="createCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Create New Category</h2>
+        <form id="createCategoryForm">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Category Name</label>
+                <input type="text" name="name" required minlength="2" maxlength="50"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Color</label>
+                <div class="flex items-center">
+                    <input type="color" name="color" value="#3b82f6"
+                           class="w-10 h-10 rounded cursor-pointer mr-3">
+                    <input type="text" name="colorText" value="#3b82f6" pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                           class="input-field flex-1 rounded-lg px-3 py-2 font-mono text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateCategoryModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                    Create
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно удаления категории -->
+<div id="deleteCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Delete Category</h2>
+        <form id="deleteCategoryForm">
+            <input type="hidden" id="categoryToDeleteId">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Move tasks to:</label>
+                <select name="newCategoryId" required class="input-field w-full rounded-lg px-3 py-2">
+                    <!-- Опции будут заполнены динамически -->
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeDeleteCategoryModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования категории -->
+<div id="editCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Edit Category</h2>
+        <form id="editCategoryForm">
+            <input type="hidden" id="editingCategoryId">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Category Name</label>
+                <input type="text" id="editCategoryName" name="name" required minlength="2" maxlength="50"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Color</label>
+                <div class="flex items-center">
+                    <input type="color" id="editCategoryColor" name="color" value="#3b82f6"
+                           class="w-10 h-10 rounded cursor-pointer mr-3">
+                    <input type="text" id="editCategoryColorText" name="colorText" value="#3b82f6"
+                           pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                           class="input-field flex-1 rounded-lg px-3 py-2 font-mono text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeEditCategoryModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div id="createTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 rounded-xl p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Create New Task</h2>
+        <form id="createTaskForm">
+            <input type="hidden" id="taskCategoryId">
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Task Name*</label>
+                <input type="text" name="name" required maxlength="255"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Description</label>
+                <textarea name="description" rows="3" maxlength="1000"
+                          class="input-field w-full rounded-lg px-3 py-2"></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Deadline</label>
+                <input type="datetime-local" name="deadline"
+                       class="input-field w-full rounded-lg px-3 py-2">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeCreateTaskModal()"
+                        class="px-4 py-2 text-slate-400 hover:text-white">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+                    Create Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Текущий проект
+    const projectId = '[[${project.id}]]';
+    let categories = [];
+    // Добавьте в начало скрипта
+
+    // Загрузка категорий и задач
+    async function loadCategories() {
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories`);
+            if (response.ok) {
+                categories = await response.json();
+                renderCategories();
+            } else {
+                showNotification('Error', error.message || 'Failed to create project', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    }
+
+    // Рендер категорий
+    function renderCategories() {
+        const container = document.getElementById('categoriesContainer');
+        container.innerHTML = '';
+
+        categories.forEach(category => {
+            const categoryCol = document.createElement('div');
+            categoryCol.className = 'category-column rounded-lg flex-shrink-0';
+            categoryCol.innerHTML = `
+                    <div class="category-header p-4" style="border-color: ${category.color}">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-semibold" style="color: ${category.color}">${category.name}</h3>
+                            <div class="relative" x-data="{ open: false }">
+                                <button
+                                    @click="open = !open"
+                                    class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Выпадающее меню -->
+                                <div
+                                    x-show="open"
+                                    @click.away="open = false"
+                                    class="absolute left-full mt-2 w-40 rounded-md shadow-lg z-20 border border-slate-700"
+                                    style="background-color: #1e293b;"
+                                >
+
+                                    <div class="py-1">
+                                        <!-- Опция "Изменить" -->
+                                        <button
+                                            @click="openEditCategoryModal('${category.id}'); open = false"
+                                            class="block w-full text-left px-4 py-2 text-sm hover:bg-slate-700"
+                                        >
+                                            Изменить
+                                        </button>
+
+                                        <!-- Опция "Удалить" -->
+                                        <button
+                                            @click="openDeleteCategoryModal('${category.id}'); open = false"
+                                            class="block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700"
+                                        >
+                                            Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tasks-${category.id}" class="tasks-container">
+                        <!-- Задачи будут здесь -->
+                    </div>
+                    <div class="category-footer">
+                        <button onclick="openCreateTaskModal('${category.id}')"
+                                class="w-full py-2 text-slate-400 hover:text-white text-sm">
+                            + Add Task
+                        </button>
+                    </div>
+            `;
+            container.appendChild(categoryCol);
+            loadTasksForCategory(category.id);
+        });
+    }
+
+    // Загрузка задач для категории
+    async function loadTasksForCategory(categoryId, loadMore = false) {
+
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${categoryId}/tasks/search`
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                renderTasks(categoryId, data.content, loadMore);
+            }
+        } catch (error) {
+            console.error('Error loading tasks:', error);
+        }
+    }
+
+    // Рендер задач
+    function renderTasks(categoryId, tasks) {
+        const container = document.getElementById(`tasks-${categoryId}`);
+        if (!container || !tasks) return;
+
+        container.innerHTML = '';
+
+        // Проверяем, что tasks - массив
+        if (Array.isArray(tasks)) {
+            tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-card rounded-lg p-3 cursor-pointer';
+                taskElement.id = task.id
+                taskElement.innerHTML = `
+                <h4 class="font-medium mb-1">${task.name}</h4>
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span>${task.status}</span>
+                    <span>${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
+                </div>
+            `;
+                container.appendChild(taskElement);
+            });
+        }
+        setupDragAndDrop();
+    }
+
+    // Управление модальными окнами
+    function openCreateCategoryModal() {
+        document.getElementById('createCategoryModal').classList.remove('hidden');
+    }
+
+    function closeCreateCategoryModal() {
+        document.getElementById('createCategoryModal').classList.add('hidden');
+    }
+
+    function openEditCategoryModal(categoryId) {
+        const category = categories.find(c => c.id === categoryId);
+        if (category) {
+            document.getElementById('editingCategoryId').value = categoryId;
+            document.getElementById('editCategoryName').value = category.name;
+            document.getElementById('editCategoryColor').value = category.color;
+            document.getElementById('editCategoryColorText').value = category.color;
+            document.getElementById('editCategoryModal').classList.remove('hidden');
+        }
+    }
+
+    // Обработка формы редактирования
+    document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const categoryId = document.getElementById('editingCategoryId').value;
+        const formData = new FormData(e.target);
+        const request = {
+            name: formData.get('name'),
+            color: formData.get('colorText')
+        };
+
+        // Валидация
+        if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(request.color)) {
+            showError('Invalid color format. Use HEX like #FF0000');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request)
+            });
+
+            if (response.ok) {
+                closeEditCategoryModal();
+                loadCategories(); // Перезагружаем список категорий
+            } else {
+                const error = await response.json();
+                showError(error.message || 'Failed to update category');
+            }
+        } catch (error) {
+            showError('Network error');
+        }
+    });
+
+    function closeEditCategoryModal() {
+        document.getElementById('editCategoryModal').classList.add('hidden');
+    }
+
+    function openDeleteCategoryModal(categoryId) {
+        const modal = document.getElementById('deleteCategoryModal');
+        document.getElementById('categoryToDeleteId').value = categoryId;
+
+        // Заполняем select доступными категориями
+        const select = modal.querySelector('select');
+        select.innerHTML = '';
+        categories
+            .filter(c => c.id !== categoryId)
+            .forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+        modal.classList.remove('hidden');
+    }
+
+    document.getElementById('deleteCategoryForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const categoryId = document.getElementById('categoryToDeleteId').value;
+        const newCategoryId = this.newCategoryId.value;
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newCategoryId })
+            });
+
+            if (response.ok) {
+                showNotification('Success', 'Category deleted', 'success');
+                closeDeleteCategoryModal();
+                await loadCategories();
+            } else {
+                const err = await response.json();
+                showNotification('Error', err.message || 'Failed to delete category', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    });
+
+    function closeDeleteCategoryModal() {
+        document.getElementById('deleteCategoryModal').classList.add('hidden');
+    }
+
+    function openCreateTaskModal(categoryId) {
+        document.getElementById('taskCategoryId').value = categoryId;
+        document.getElementById('createTaskModal').classList.remove('hidden');
+    }
+
+    function closeCreateTaskModal() {
+        document.getElementById('createTaskModal').classList.add('hidden');
+    }
+
+    function setupDragAndDrop() {
+        const tasksContainers = document.querySelectorAll('[id^="tasks-"]');
+
+        tasksContainers.forEach(container => {
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const taskBeingDragged = document.querySelector('.dragging');
+
+                if (!taskBeingDragged) return;
+
+                // Временно перемещаем элемент для визуального эффекта
+                if (afterElement) {
+                    container.insertBefore(taskBeingDragged, afterElement);
+                } else {
+                    container.appendChild(taskBeingDragged);
+                }
+            });
+
+            container.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const taskId = e.dataTransfer.getData('text/plain');
+                const sourceCategoryId = e.dataTransfer.getData('source-category');
+                const targetCategoryId = e.currentTarget.id.replace('tasks-', '');
+
+                // Получаем все задачи в целевой категории (кроме перетаскиваемой)
+                const tasksInTarget = Array.from(e.currentTarget.querySelectorAll('.task-card:not(.dragging)'));
+
+                // Определяем afterElement заново, так как DOM уже изменился
+                const afterElement = getDragAfterElement(e.currentTarget, e.clientY);
+
+                // Вычисляем новую позицию:
+                let newPosition;
+                if (!afterElement) {
+                    // Если бросаем в конец списка
+                    newPosition = tasksInTarget.length;
+                } else {
+                    // Находим индекс элемента, перед которым вставляем
+                    const afterIndex = tasksInTarget.findIndex(task => task === afterElement);
+                    newPosition = afterIndex >= 0 ? afterIndex : tasksInTarget.length;
+                }
+
+                console.log('New position calculated:', newPosition); // Отладочный вывод
+
+                try {
+                    const response = await fetch(
+                        `/api/v1/projects/${projectId}/categories/${sourceCategoryId}/tasks/${taskId}/move`,
+                        {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                categoryId: targetCategoryId,
+                                position: newPosition
+                            })
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Server returned error');
+                    }
+
+                    // Обновляем обе категории
+                    loadTasksForCategory(sourceCategoryId);
+                    loadTasksForCategory(targetCategoryId);
+
+                } catch (error) {
+                    console.error('Move error:', error);
+                    // Восстанавливаем исходное состояние
+                    loadTasksForCategory(sourceCategoryId);
+                    if (sourceCategoryId !== targetCategoryId) {
+                        loadTasksForCategory(targetCategoryId);
+                    }
+                    showError('Ошибка при перемещении задачи');
+                }
+            });
+        });
+
+        // Обработчики для задач
+        document.querySelectorAll('.task-card').forEach(task => {
+            task.setAttribute('draggable', 'true');
+
+            task.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', task.id);
+                e.dataTransfer.setData('source-category', task.closest('[id^="tasks-"]').id.replace('tasks-', ''));
+                e.dataTransfer.effectAllowed = 'move';
+                task.classList.add('dragging');
+
+                // Фиксируем исходную позицию
+                task.dataset.originalCategory = task.closest('[id^="tasks-"]').id.replace('tasks-', '');
+            });
+
+            task.addEventListener('dragend', () => {
+                document.querySelectorAll('.task-card').forEach(t => {
+                    t.classList.remove('dragging');
+                });
+            });
+        });
+    }
+
+    // Улучшенная функция определения позиции
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Обработка форм
+    document.getElementById('createCategoryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const request = {
+            name: formData.get('name'),
+            color: formData.get('colorText')
+        };
+
+        // Валидация
+        if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(request.color)) {
+            showError('Invalid color format. Use HEX like #FF0000');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request)
+            });
+
+            if (response.ok) {
+                closeCreateCategoryModal();
+                loadCategories();
+            } else {
+                const error = await response.json();
+                showError(error.message || 'Failed to create category');
+            }
+        } catch (error) {
+            showError('Network error');
+        }
+    });
+
+    document.getElementById('editCategoryForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const id = document.getElementById('editingCategoryId').value;
+        const name = this.name.value;
+        const color = this.color.value;
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color })
+            });
+
+            if (response.ok) {
+                showNotification('Success', 'Category updated', 'success');
+                closeEditCategoryModal();
+                await loadCategories();
+            } else {
+                const err = await response.json();
+                showNotification('Error', err.message || 'Failed to update category', 'error');
+            }
+        } catch (error) {
+            showNotification('Error', 'Network error', 'error');
+        }
+    });
+
+    document.getElementById('createTaskForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const categoryId = document.getElementById('taskCategoryId').value;
+        const formData = new FormData(e.target);
+
+        // Преобразование даты дедлайна
+        const deadlineValue = formData.get('deadline');
+        const deadline = deadlineValue ? new Date(deadlineValue).toISOString() : null;
+
+        const request = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            deadline: deadline
+        };
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}/tasks/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request)
+            });
+
+            if (response.ok) {
+                const taskId = await response.text();
+                closeCreateTaskModal();
+                loadTasksForCategory(categoryId); // Перезагружаем задачи для текущей категории
+                showNotification('Success', 'Task created successfully', 'success');
+            } else {
+                const error = await response.json();
+                showError(error.message || 'Failed to create task');
+            }
+        } catch (error) {
+            showError('Network error');
+        }
+    });
+
+    const colorPicker = document.querySelector('input[type="color"]');
+    const colorText = document.querySelector('input[name="colorText"]');
+
+    colorPicker.addEventListener('input', (e) => {
+        colorText.value = e.target.value;
+    });
+
+    colorText.addEventListener('input', (e) => {
+        if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(e.target.value)) {
+            colorPicker.value = e.target.value;
+        }
+    });
+
+    document.getElementById('deleteCategoryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const categoryId = document.getElementById('categoryToDeleteId').value;
+        const newCategoryId = e.target.elements.newCategoryId.value;
+
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newCategoryId })
+            });
+
+            if (response.ok) {
+                closeDeleteCategoryModal();
+                loadCategories();
+            } else {
+                const error = await response.json();
+                showError(error.message || 'Failed to delete category');
+            }
+        } catch (error) {
+            showError('Network error');
+        }
+    });
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+    });
+
+    function showNotification(title, message, type) {
+        // const notification = document.getElementById('notification');
+        // const notificationTitle = document.getElementById('notification-title');
+        // const notificationMessage = document.getElementById('notification-message');
+        // const notificationIcon = document.getElementById('notification-icon');
+        //
+        // notificationTitle.textContent = title;
+        // notificationMessage.textContent = message;
+        //
+        // notification.className = 'notification';
+        // notification.classList.add(type);
+        // notificationIcon.textContent = type === 'success' ? '✓' : '✗';
+        //
+        // notification.classList.remove('hidden');
+        // notification.classList.add('show');
+        //
+        // setTimeout(() => {
+        //     notification.classList.remove('show');
+        //     setTimeout(() => notification.classList.add('hidden'), 300);
+        // }, 5000);
+    }
+</script>
+</body>
+</html>

@@ -106,6 +106,6 @@ public class ProjectMemberService {
     }
 
     public Optional<ProjectRole> getAccountRole(UUID projectId, String username) {
-        return projectMemberRepository.findProjectRoleByProjectInnerIdAndAccountUsername(projectId, username);
+        return projectMemberRepository.findRoleByProjectInnerIdAndAccountUsername(projectId, username);
     }
 }

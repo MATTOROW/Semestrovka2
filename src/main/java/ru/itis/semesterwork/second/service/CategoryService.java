@@ -29,6 +29,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ProjectRepository projectRepository;
     private final CategoryMapper categoryMapper;
+    private final TaskService taskService;
 
     @Transactional
     public UUID create(UUID projectId, @Valid CreateCategoryRequest request) {
@@ -65,7 +66,6 @@ public class CategoryService {
     }
 
 
-    // TODO добавить перенос тасок в другие категории
     @Transactional
     public void deleteByCategoryIdWithMovingToOtherCategory(
             UUID projectId,
@@ -79,6 +79,7 @@ public class CategoryService {
             throw new CategoryNotFoundException(request.newCategoryId());
         }
 
+        taskService.moveAllTasks(projectId, request.categoryId(), request.newCategoryId());
         categoryRepository.deleteByInnerId(request.categoryId());
     }
 }

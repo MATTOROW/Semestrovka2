@@ -249,7 +249,6 @@
                 description: descriptionInput.value
             };
 
-            console.log(JSON.stringify(updateData))
 
             try {
                 const response = await fetch(`/api/v1/accounts/${currentUsername}`, {
@@ -273,7 +272,6 @@
                 }
             } catch (error) {
                 showNotification('Error', 'Network error. Please try again.', 'error');
-                console.error('Error:', error);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
