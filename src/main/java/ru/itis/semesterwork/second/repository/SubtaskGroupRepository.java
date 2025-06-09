@@ -26,4 +26,18 @@ public interface SubtaskGroupRepository extends JpaRepository<SubtaskGroupEntity
     @Modifying
     @Query("UPDATE SubtaskGroupEntity sg set sg.position = sg.position - 1 WHERE sg.task.innerId = :taskId AND sg.position > :position")
     void updatePositionsMinus(@Param("taskId") UUID taskId, @Param("position") Integer position);
+
+    @Query("""
+        SELECT COUNT(g) = SUM(CASE WHEN g.completed = true THEN 1 ELSE 0 END)
+        FROM SubtaskGroupEntity g
+        WHERE g.task.id = :taskId
+    """)
+    boolean areAllGroupsCompletedByTaskId(@Param("taskId") Long taskId);
+
+    @Modifying
+    @Query("UPDATE SubtaskGroupEntity sg SET sg.completed = :completed WHERE sg.id = :id")
+    void updateCompletedById(@Param("id") Long id, @Param("completed") boolean completed);
+
+    @Query("SELECT t.id FROM SubtaskGroupEntity s LEFT JOIN TaskEntity t ON s.task = t WHERE s.id = :id")
+    Long getTaskIdById(@Param("id") Long id);
 }

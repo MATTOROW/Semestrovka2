@@ -1,13 +1,14 @@
 package ru.itis.semesterwork.second.controller.rest;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.SubtaskGroupRestAPI;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.CreateSubtaskGroupRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupOrderRequest;
-import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupInfoResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupWithSubtasksResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 import ru.itis.semesterwork.second.service.SubtaskGroupService;
 
 import java.util.List;
@@ -20,12 +21,12 @@ public class SubtaskGroupRestController implements SubtaskGroupRestAPI {
     private final SubtaskGroupService subtaskGroupService;
 
     @Override
-    public SubtaskGroupResponse getByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId) {
+    public SubtaskGroupInfoResponse getByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId) {
         return subtaskGroupService.findByInnerId(innerId, projectId, categoryId, taskId);
     }
 
     @Override
-    public List<SubtaskGroupResponse> getByTaskInnerId(UUID projectId, UUID categoryId, UUID taskId) {
+    public List<SubtaskGroupWithSubtasksResponse> getByTaskInnerId(UUID projectId, UUID categoryId, UUID taskId) {
         return subtaskGroupService.findByTaskInnerId(projectId, categoryId, taskId);
     }
 
@@ -50,7 +51,7 @@ public class SubtaskGroupRestController implements SubtaskGroupRestAPI {
     }
 
     @Override
-    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, Boolean completed) {
-        subtaskGroupService.changeStatus(innerId, projectId, categoryId, taskId, completed);
+    public TaskStatusResponse changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, Boolean completed) {
+        return subtaskGroupService.changeStatus(innerId, projectId, categoryId, taskId, completed);
     }
 }

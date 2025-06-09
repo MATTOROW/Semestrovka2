@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.CreateSubtaskGroupRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupOrderRequest;
-import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupInfoResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupWithSubtasksResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +21,7 @@ public interface SubtaskGroupRestAPI {
     // Получить группу подзадач по innerId
     @GetMapping("/{innerId}")
     @ResponseStatus(HttpStatus.OK)
-    SubtaskGroupResponse getByInnerId(
+    SubtaskGroupInfoResponse getByInnerId(
             @PathVariable("innerId") UUID innerId,
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,
@@ -29,7 +31,7 @@ public interface SubtaskGroupRestAPI {
     // Получить все группы подзадач задачи по innerId задачи
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    List<SubtaskGroupResponse> getByTaskInnerId(
+    List<SubtaskGroupWithSubtasksResponse> getByTaskInnerId(
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,
             @PathVariable("taskId") UUID taskId
@@ -78,7 +80,7 @@ public interface SubtaskGroupRestAPI {
 
     @PatchMapping("/{innerId}/status")
     @ResponseStatus(HttpStatus.OK)
-    void changeStatus(
+    TaskStatusResponse changeStatus(
             @PathVariable("innerId") UUID innerId,
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,

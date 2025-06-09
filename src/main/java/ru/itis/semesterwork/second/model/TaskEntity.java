@@ -33,7 +33,7 @@ public class TaskEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private TaskStatus status = TaskStatus.NOT_STARTED;
+    private TaskStatus status = TaskStatus.NOT_COMPLETED;
 
     @CreationTimestamp
     @Column(name = "create_date", nullable = false, updatable = false, columnDefinition = "timestamp")

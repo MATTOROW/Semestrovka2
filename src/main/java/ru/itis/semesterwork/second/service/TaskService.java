@@ -16,10 +16,12 @@ import ru.itis.semesterwork.second.exception.TaskNotFoundException;
 import ru.itis.semesterwork.second.mapper.TaskMapper;
 import ru.itis.semesterwork.second.model.CategoryEntity;
 import ru.itis.semesterwork.second.model.TaskEntity;
+import ru.itis.semesterwork.second.model.TaskStatus;
 import ru.itis.semesterwork.second.repository.CategoryRepository;
 import ru.itis.semesterwork.second.repository.TaskRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,6 +66,9 @@ public class TaskService {
         CategoryEntity category = hierarchyValidationService.validateCategoryHierarchy(projectId, categoryId);
         taskEntity.setCategory(category);
         taskEntity.setPosition(taskRepository.countByCategoryInnerId(categoryId));
+        if (taskEntity.getDeadline() != null && Instant.now().compareTo(taskEntity.getDeadline()) > 0) {
+            taskEntity.setStatus(TaskStatus.EXPIRED);
+        }
         return taskRepository.save(taskEntity).getInnerId();
     }
 

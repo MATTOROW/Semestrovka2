@@ -2,7 +2,7 @@ package ru.itis.semesterwork.second.dto.response.subtaskgroup;
 
 import java.util.UUID;
 
-public record SubtaskGroupResponse (
+public record SubtaskGroupInfoResponse(
     UUID id,
     String name,
     Boolean completed,

@@ -7,10 +7,12 @@ import ru.itis.semesterwork.second.dto.request.subtask.CreateSubtaskRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskOrderRequest;
 import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 import ru.itis.semesterwork.second.exception.SubtaskNotFoundException;
 import ru.itis.semesterwork.second.mapper.SubtaskMapper;
 import ru.itis.semesterwork.second.model.SubtaskEntity;
 import ru.itis.semesterwork.second.model.SubtaskGroupEntity;
+import ru.itis.semesterwork.second.model.TaskStatus;
 import ru.itis.semesterwork.second.repository.SubtaskRepository;
 
 import java.util.List;
@@ -26,6 +28,7 @@ public class SubtaskService {
     private final SubtaskRepository subtaskRepository;
     private final SubtaskMapper subtaskMapper;
     private final HierarchyValidationService hierarchyValidationService;
+    private final StatusService statusService;
 
     public SubtaskResponse findByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId) {
         return subtaskMapper.toResponse(
@@ -87,12 +90,15 @@ public class SubtaskService {
     }
 
     @Transactional
-    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
-        System.out.println();
+    public TaskStatusResponse changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
         SubtaskEntity subtaskEntity = hierarchyValidationService.validateSubtaskHierarchy(projectId, categoryId, taskId, groupId, innerId);
         if (!completed.equals(subtaskEntity.getCompleted())) {
             subtaskEntity.setCompleted(completed);
             subtaskRepository.save(subtaskEntity);
+            TaskStatus newStatus = statusService.updateGroupStatus(subtaskEntity.getSubtaskGroup().getId());
+            return new TaskStatusResponse(newStatus);
+        } else {
+            return new TaskStatusResponse(subtaskEntity.getSubtaskGroup().getTask().getStatus());
         }
     }
 }

@@ -7,6 +7,7 @@ import ru.itis.semesterwork.second.dto.request.subtask.CreateSubtaskRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskOrderRequest;
 import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -82,7 +83,7 @@ public interface SubtaskRestAPI {
 
     @PatchMapping("/{innerId}/status")
     @ResponseStatus(HttpStatus.OK)
-    void changeStatus(
+    TaskStatusResponse changeStatus(
             @PathVariable("innerId") UUID innerId,
             @PathVariable("projectId") UUID projectId,
             @PathVariable("categoryId") UUID categoryId,

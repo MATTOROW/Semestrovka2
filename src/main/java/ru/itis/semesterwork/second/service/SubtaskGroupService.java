@@ -6,17 +6,20 @@ import org.springframework.stereotype.Service;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.CreateSubtaskGroupRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupOrderRequest;
-import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupResponse;
-import ru.itis.semesterwork.second.exception.SubtaskGroupNotFoundException;
+import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupInfoResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupWithSubtasksResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 import ru.itis.semesterwork.second.mapper.SubtaskGroupMapper;
-import ru.itis.semesterwork.second.model.SubtaskEntity;
+import ru.itis.semesterwork.second.mapper.SubtaskMapper;
 import ru.itis.semesterwork.second.model.SubtaskGroupEntity;
 import ru.itis.semesterwork.second.model.TaskEntity;
+import ru.itis.semesterwork.second.model.TaskStatus;
 import ru.itis.semesterwork.second.repository.SubtaskGroupRepository;
+import ru.itis.semesterwork.second.repository.SubtaskRepository;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,19 +29,28 @@ import java.util.stream.Collectors;
 public class SubtaskGroupService {
 
     private final SubtaskGroupMapper subtaskGroupMapper;
+    private final SubtaskMapper subtaskMapper;
     private final SubtaskGroupRepository subtaskGroupRepository;
     private final HierarchyValidationService hierarchyValidationService;
+    private final SubtaskRepository subtaskRepository;
+    private final StatusService statusService;
 
-    public SubtaskGroupResponse findByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId) {
+    public SubtaskGroupInfoResponse findByInnerId(UUID innerId, UUID projectId, UUID categoryId, UUID taskId) {
         return subtaskGroupMapper.toResponse(
                 hierarchyValidationService.validateSubtaskGroupHierarchy(projectId, categoryId, taskId, innerId)
         );
     }
 
-    public List<SubtaskGroupResponse> findByTaskInnerId(UUID projectId, UUID categoryId, UUID taskId) {
+    public List<SubtaskGroupWithSubtasksResponse> findByTaskInnerId(UUID projectId, UUID categoryId, UUID taskId) {
         TaskEntity taskEntity = hierarchyValidationService.validateTaskHierarchy(projectId, categoryId, taskId);
+        List<SubtaskGroupWithSubtasksResponse> groups = taskEntity.getSubtaskGroups().stream()
+                .map(sg -> {
+                    List<SubtaskResponse> subtasks = sg.getSubtasks().stream().map(subtaskMapper::toResponse).toList();
+                    return subtaskGroupMapper.toResponseWithMembers(sg, subtasks);
+                })
+                .toList();
 
-        return taskEntity.getSubtaskGroups().stream().map(subtaskGroupMapper::toResponse).toList();
+        return groups;
     }
 
     @Transactional
@@ -89,13 +101,16 @@ public class SubtaskGroupService {
     }
 
     @Transactional
-    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, Boolean completed) {
+    public TaskStatusResponse changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, Boolean completed) {
         SubtaskGroupEntity subtaskGroupEntity = hierarchyValidationService.validateSubtaskGroupHierarchy(projectId, categoryId, taskId, innerId);
         if (!completed.equals(subtaskGroupEntity.getCompleted())) {
             subtaskGroupEntity.setCompleted(completed);
-            List<SubtaskEntity> subtaskEntities = subtaskGroupEntity.getSubtasks();
-            subtaskEntities.forEach(s -> s.setCompleted(completed));
             subtaskGroupRepository.save(subtaskGroupEntity);
+            subtaskRepository.updateCompletedBySubtaskGroupInnerId(completed, subtaskGroupEntity.getInnerId());
+            TaskStatus newStatus = statusService.updateTaskStatus(subtaskGroupEntity.getTask().getId());
+            return new TaskStatusResponse(newStatus);
+        } else {
+            return new TaskStatusResponse(subtaskGroupEntity.getTask().getStatus());
         }
     }
 }

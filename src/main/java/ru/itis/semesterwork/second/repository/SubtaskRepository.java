@@ -23,4 +23,15 @@ public interface SubtaskRepository extends JpaRepository<SubtaskEntity, Long> {
     @Modifying
     @Query("UPDATE SubtaskEntity s set s.position = s.position - 1 WHERE s.subtaskGroup.innerId = :groupId AND s.position > :position")
     void updatePositionsMinus(@Param("groupId") UUID groupId, @Param("position") Integer position);
+
+    @Modifying
+    @Query("UPDATE SubtaskEntity s set s.completed = :completed WHERE s.subtaskGroup.innerId = :groupId")
+    void updateCompletedBySubtaskGroupInnerId(@Param("completed") Boolean completed, @Param("groupId") UUID groupId);
+
+    @Query("""
+        SELECT COUNT(s) = SUM(CASE WHEN s.completed = true THEN 1 ELSE 0 END)
+        FROM SubtaskEntity s
+        WHERE s.subtaskGroup.id = :groupId
+    """)
+    boolean areAllCompletedByGroupId(@Param("groupId") Long groupId);
 }

@@ -486,6 +486,7 @@
 <script>
     // Глобальные переменные
     const projectId = '[[${project.id}]]';
+    const CACHE_TTL = 300000; // 5 минут
     let categories = [];
     const TASKS_PER_PAGE = 20;
     let tasksLoading = {};
@@ -494,14 +495,45 @@
     let currentTask = null;
     let currentCategoryId = null;
     let subtaskGroups = [];
-    let eventListeners = {};
+    let tasksByCategory = {};  // key: categoryId, value: массив задач
+
 
     // Инициализация при загрузке страницы
     document.addEventListener('DOMContentLoaded', () => {
-        loadCategories();
+        // Пытаемся загрузить данные из кэша
+        const cachedData = loadFromCache('projectData');
+        if (cachedData && cachedData.categories) {
+            categories = cachedData.categories;
+            tasksByCategory = cachedData.tasksByCategory || {};
+            renderCategories();
+
+            // Обновляем данные с сервера в фоне
+            setTimeout(loadCategories, 500);
+        } else {
+            loadCategories();
+        }
+
         setupModalEventListeners();
         setupColorPicker();
     });
+
+    function saveToCache(key, data) {
+        const record = {
+            data: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(record));
+    }
+
+    function loadFromCache(key) {
+        const record = localStorage.getItem(key);
+        if (!record) return null;
+
+        const { data, timestamp } = JSON.parse(record);
+        if (Date.now() - timestamp > CACHE_TTL) return null;
+
+        return data;
+    }
 
     // Настройка обработчиков событий для модальных окон
     function setupModalEventListeners() {
@@ -546,20 +578,33 @@
     // Загрузка категорий
     async function loadCategories() {
         try {
-            const response = await fetch(`/api/v1/projects/${projectId}/categories`);
+            const response = await fetch(`/api/v1/projects/${projectId}/categories`, {
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+
             if (response.ok) {
                 categories = await response.json();
                 categories.forEach(cat => {
                     tasksLoading[cat.id] = false;
                     hasMoreTasks[cat.id] = true;
                     tasksPage[cat.id] = 0;
+
+                    // Если задачи для этой категории уже есть в кэше, не загружаем их снова
+                    if (!tasksByCategory[cat.id]) {
+                        loadTasksForCategory(cat.id);
+                    }
                 });
+
                 renderCategories();
-            } else {
-                throw new Error('Failed to load categories');
+
+                // Сохраняем в кэш
+                saveToCache('projectData', {
+                    categories: categories,
+                    tasksByCategory: tasksByCategory
+                });
             }
         } catch (error) {
-            showNotification('Error', 'Failed to load categories', 'error');
+            console.error('Failed to load categories:', error);
         }
     }
 
@@ -614,25 +659,40 @@
         if (tasksLoading[categoryId] || !hasMoreTasks[categoryId]) return;
 
         tasksLoading[categoryId] = true;
-        document.getElementById(`spinner-${categoryId}`).style.display = 'block';
+        const spinner = document.getElementById(`spinner-${categoryId}`);
+        if (spinner) spinner.style.display = 'block';
 
         try {
             const page = loadMore ? tasksPage[categoryId] : 0;
             const response = await fetch(
-                `/api/v1/projects/${projectId}/categories/${categoryId}/tasks/search?page=${page}&size=${TASKS_PER_PAGE}`
+                `/api/v1/projects/${projectId}/categories/${categoryId}/tasks/search?page=${page}&size=${TASKS_PER_PAGE}`,
+                { headers: { 'Cache-Control': 'no-cache' } }
             );
 
             if (response.ok) {
                 const data = await response.json();
                 hasMoreTasks[categoryId] = !data.last;
                 tasksPage[categoryId] = page + 1;
+
+                if (loadMore && tasksByCategory[categoryId]) {
+                    tasksByCategory[categoryId] = [...tasksByCategory[categoryId], ...data.content];
+                } else {
+                    tasksByCategory[categoryId] = data.content;
+                }
+
                 renderTasks(categoryId, data.content, loadMore);
+
+                // Обновляем кэш
+                const cachedData = loadFromCache('projectData') || {};
+                cachedData.tasksByCategory = tasksByCategory;
+                saveToCache('projectData', cachedData);
             }
         } catch (error) {
-            showNotification('Error', 'Failed to load tasks', 'error');
+            console.error('Failed to load tasks:', error);
         } finally {
             tasksLoading[categoryId] = false;
-            document.getElementById(`spinner-${categoryId}`).style.display = 'none';
+            const spinner = document.getElementById(`spinner-${categoryId}`);
+            if (spinner) spinner.style.display = 'none';
         }
     }
 
@@ -861,37 +921,68 @@
     }
 
     async function openTaskModal(taskId, categoryId) {
+        // Пытаемся найти задачу в локальном кэше
+        const cachedTask = tasksByCategory[categoryId]?.find(t => t.id === taskId);
+
+        if (cachedTask) {
+            currentTask = cachedTask;
+            currentCategoryId = categoryId;
+            populateTaskModal(cachedTask);
+
+            // Загружаем подзадачи в фоне
+            loadSubtaskGroups(taskId).catch(console.error);
+
+            document.getElementById('taskModal').classList.remove('hidden');
+            return;
+        }
+
+        // Если задачи нет в кэше, загружаем с сервера
         try {
             const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}/tasks/${taskId}`);
             if (response.ok) {
                 currentTask = await response.json();
                 currentCategoryId = categoryId;
 
-                // Заполняем данные задачи
-                document.getElementById('taskName').value = currentTask.name;
-                document.getElementById('taskDescription').value = currentTask.description || '';
-
-                // Настраиваем автосохранение
-                document.getElementById('taskName').onchange = saveTaskChanges;
-                document.getElementById('taskDescription').onchange = saveTaskChanges;
-                document.getElementById('taskDeadline').onchange = saveTaskChanges;
-
-                if (currentTask.deadline) {
-                    const deadlineDate = new Date(currentTask.deadline);
-                    const formattedDeadline = deadlineDate.toISOString().slice(0, 16);
-                    document.getElementById('taskDeadline').value = formattedDeadline;
-                } else {
-                    document.getElementById('taskDeadline').value = '';
+                // Обновляем кэш
+                const taskIndex = tasksByCategory[categoryId]?.findIndex(t => t.id === taskId);
+                if (taskIndex >= 0) {
+                    tasksByCategory[categoryId][taskIndex] = currentTask;
                 }
 
+                populateTaskModal(currentTask);
                 await loadSubtaskGroups(taskId);
                 document.getElementById('taskModal').classList.remove('hidden');
-            } else {
-                throw new Error('Failed to load task');
             }
         } catch (error) {
-            showNotification('Error', 'Failed to load task details', 'error');
+            console.error('Failed to load task:', error);
         }
+    }
+
+    function populateTaskModal(task) {
+        document.getElementById('taskName').value = task.name;
+        document.getElementById('taskDescription').value = task.description || '';
+
+        if (task.deadline) {
+            const deadlineDate = new Date(task.deadline);
+            document.getElementById('taskDeadline').value = formatLocalDateTime(deadlineDate);
+        } else {
+            document.getElementById('taskDeadline').value = '';
+        }
+
+        // Настраиваем автосохранение с дебаунсом
+        ['taskName', 'taskDescription', 'taskDeadline'].forEach(id => {
+            const element = document.getElementById(id);
+            element.onchange = debounce(saveTaskChanges, 500);
+        });
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
     }
 
     function closeTaskModal() {
@@ -903,13 +994,44 @@
 
     // Сохранение изменений задачи
     async function saveTaskChanges() {
+        if (!currentTask || !currentCategoryId) return;
+
         const updatedTask = {
             name: document.getElementById('taskName').value,
             description: document.getElementById('taskDescription').value,
-            deadline: document.getElementById('taskDeadline').value ? new Date(document.getElementById('taskDeadline').value) : null
+            deadline: document.getElementById('taskDeadline').value
+                ? new Date(document.getElementById('taskDeadline').value)
+                : null
         };
 
         try {
+            // Оптимистичное обновление UI
+            const taskElement = document.querySelector(`[data-task-id="${currentTask.id}"]`);
+            if (taskElement) {
+                const taskName = taskElement.querySelector(".task-name");
+                const taskDeadline = taskElement.querySelector(".task-deadline");
+
+                if (taskName) taskName.textContent = updatedTask.name;
+                if (taskDeadline) {
+                    taskDeadline.textContent = updatedTask.deadline
+                        ? new Date(updatedTask.deadline).toLocaleDateString()
+                        : 'No deadline';
+                }
+            }
+
+            // Обновляем локальные данные
+            Object.assign(currentTask, updatedTask);
+            const taskIndex = tasksByCategory[currentCategoryId]?.findIndex(t => t.id === currentTask.id);
+            if (taskIndex >= 0) {
+                tasksByCategory[currentCategoryId][taskIndex] = currentTask;
+            }
+
+            // Сохраняем в кэш
+            const cachedData = loadFromCache('projectData') || {};
+            cachedData.tasksByCategory = tasksByCategory;
+            saveToCache('projectData', cachedData);
+
+            // Отправляем на сервер
             const response = await fetch(
                 `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}`,
                 {
@@ -922,19 +1044,8 @@
             if (!response.ok) {
                 throw new Error('Failed to update task');
             }
-
-            // Обновляем задачу в списке
-            const taskElement = document.querySelector(`[data-task-id="${currentTask.id}"]`);
-            if (taskElement) {
-                const taskName = taskElement.querySelector(".task-name");
-                const taskDeadline = taskElement.querySelector(".task-deadline");
-
-                taskName.textContent = updatedTask.name;
-                taskDeadline.textContent = updatedTask.deadline ?
-                    new Date(updatedTask.deadline).toLocaleDateString() : 'No deadline';
-            }
         } catch (error) {
-            showNotification('Error', 'Failed to save task changes', 'error');
+            console.error('Failed to save task changes:', error);
         }
     }
 
@@ -942,31 +1053,26 @@
     async function loadSubtaskGroups(taskId) {
         try {
             const response = await fetch(
-                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${taskId}/groups`
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${taskId}/groups`,
+                { headers: { 'Cache-Control': 'no-cache' } }
             );
 
             if (response.ok) {
                 subtaskGroups = await response.json();
 
-                // Загружаем подзадачи для каждой группы
-                for (const group of subtaskGroups) {
-                    group.subtasks = await loadSubtasksForGroup(group.id);
-                }
-
                 renderSubtaskGroups();
                 setupTaskModalDragAndDrop();
-            } else {
-                throw new Error('Failed to load subtask groups');
             }
         } catch (error) {
-            showNotification('Error', 'Failed to load subtask groups', 'error');
+            console.error('Failed to load subtask groups:', error);
         }
     }
 
     async function loadSubtasksForGroup(groupId) {
         try {
             const response = await fetch(
-                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask`
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/subtask`,
+                { headers: { 'Cache-Control': 'no-cache' } }
             );
 
             if (response.ok) {
@@ -974,7 +1080,7 @@
             }
             return [];
         } catch (error) {
-            showNotification('Error', 'Failed to load subtasks', 'error');
+            console.error('Failed to load subtasks:', error);
             return [];
         }
     }
@@ -989,29 +1095,33 @@
             groupElement.dataset.groupId = group.id;
 
             groupElement.innerHTML = `
-                <div class="subtask-group-header">
-                    <div class="flex items-center">
-                        <span class="drag-handle">☰</span>
-                        <h4 class="font-medium">${group.name}</h4>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="openCreateSubtaskModal('${group.id}')"
-                                class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded">
-                            + Add Subtask
-                        </button>
-                        <button onclick="deleteSubtaskGroup('${group.id}')"
-                                class="text-xs px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded">
-                            Delete
-                        </button>
-                    </div>
+            <div class="subtask-group-header flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="drag-handle">☰</span>
+                    <input type="checkbox"
+                           class="group-checkbox"
+                           ${group.completed ? 'checked' : ''}
+                           onchange="toggleGroupStatus('${group.id}', this.checked)">
+                    <h4 class="font-medium">${group.name}</h4>
                 </div>
-                <div class="subtask-group-content" id="subtasks-${group.id}">
-                    <!-- Подзадачи будут здесь -->
+                <div class="flex space-x-2">
+                    <button onclick="openCreateSubtaskModal('${group.id}')"
+                            class="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded">
+                        + Add Subtask
+                    </button>
+                    <button onclick="deleteSubtaskGroup('${group.id}')"
+                            class="text-xs px-2 py-1 bg-rose-600 hover:bg-rose-700 rounded">
+                        Delete
+                    </button>
                 </div>
-            `;
+            </div>
+            <div class="subtask-group-content" id="subtasks-${group.id}">
+                <!-- Подзадачи будут здесь -->
+            </div>
+        `;
 
             container.appendChild(groupElement);
-            renderSubtasks(group.id, group.subtasks || []);
+            renderSubtasks(group.id, group.subtasks || null);
         });
     }
 
@@ -1021,7 +1131,9 @@
 
         container.innerHTML = '';
 
-        if (!subtasks || subtasks.length === 0) {
+        console.log(subtasks)
+
+        if (!subtasks) {
             subtasks = await loadSubtasksForGroup(groupId);
         }
 
@@ -1344,6 +1456,25 @@
         };
 
         try {
+            // Оптимистичное обновление UI
+            const newTask = {
+                id: 'temp-' + Date.now(),
+                ...request,
+                status: 'New',
+                deadline: deadline
+            };
+
+            if (!tasksByCategory[categoryId]) {
+                tasksByCategory[categoryId] = [];
+            }
+
+            tasksByCategory[categoryId].unshift(newTask);
+            renderTasks(categoryId, [newTask], false);
+
+            closeCreateTaskModal();
+            showNotification('Success', 'Creating task...', 'success');
+
+            // Отправляем на сервер
             const response = await fetch(`/api/v1/projects/${projectId}/categories/${categoryId}/tasks/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1351,14 +1482,32 @@
             });
 
             if (response.ok) {
-                closeCreateTaskModal();
-                loadTasksForCategory(categoryId);
+                const createdTask = await response.json();
+
+                // Заменяем временную задачу на созданную
+                const taskIndex = tasksByCategory[categoryId].findIndex(t => t.id === newTask.id);
+                if (taskIndex >= 0) {
+                    tasksByCategory[categoryId][taskIndex] = createdTask;
+                }
+
+                // Обновляем кэш
+                const cachedData = loadFromCache('projectData') || {};
+                cachedData.tasksByCategory = tasksByCategory;
+                saveToCache('projectData', cachedData);
+
+                // Перерисовываем задачи
+                renderTasks(categoryId, tasksByCategory[categoryId], false);
                 showNotification('Success', 'Task created successfully', 'success');
             } else {
+                // Откатываем изменения в случае ошибки
+                tasksByCategory[categoryId] = tasksByCategory[categoryId].filter(t => t.id !== newTask.id);
+                renderTasks(categoryId, tasksByCategory[categoryId], false);
+
                 const error = await response.json();
                 showNotification('Error', error.message || 'Failed to create task', 'error');
             }
         } catch (error) {
+            console.error('Failed to create task:', error);
             showNotification('Error', 'Network error', 'error');
         }
     }
@@ -1489,6 +1638,38 @@
         }
     }
 
+    async function toggleGroupStatus(groupId, completed) {
+        try {
+            const response = await fetch(
+                `/api/v1/projects/${projectId}/categories/${currentCategoryId}/tasks/${currentTask.id}/groups/${groupId}/status?completed=${completed}`,
+                {method: 'PATCH'}
+            );
+
+            if (!response.ok) {
+                showNotification('Ошибка при обновлении статуса группы');
+                return;
+            }
+
+            const {newStatus} = await response.json();
+            currentTask.status = newStatus; // обновляем локальную задачу
+
+            // Обновляем локальные данные подзадач
+            const group = subtaskGroups.find(g => g.id === groupId);
+            if (group) {
+                group.completed = completed;
+                group.subtasks?.forEach(s => s.completed = completed);
+            }
+
+            renderSubtaskGroups();
+            updateTaskStatusOnBoard(currentTask.id, newStatus); // 🆕 обновление на доске
+
+        } catch (error) {
+            showNotification('Ошибка при обновлении статуса группы подзадач');
+            console.error(error);
+        }
+    }
+
+
     async function toggleSubtaskStatus(groupId, subtaskId, completed) {
         try {
             const response = await fetch(
@@ -1500,15 +1681,57 @@
                 const error = await response.json();
                 showNotification('Error', error.message || 'Failed to update subtask', 'error');
                 document.querySelector(`.subtask-item[data-subtask-id="${subtaskId}"] .subtask-checkbox`).checked = !completed;
+                return;
             }
+
+            const { newStatus } = await response.json();
+            currentTask.status = newStatus;
+
+            const group = subtaskGroups.find(g => g.id === groupId);
+            if (group) {
+                const subtask = group.subtasks?.find(s => s.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = completed;
+                }
+                group.completed = group.subtasks.every(s => s.completed);
+            }
+
+            renderSubtaskGroups();
+            updateTaskStatusOnBoard(currentTask.id, newStatus); // 🆕 обновление на доске
+
         } catch (error) {
             showNotification('Error', 'Network error', 'error');
             document.querySelector(`.subtask-item[data-subtask-id="${subtaskId}"] .subtask-checkbox`).checked = !completed;
         }
     }
 
+    function updateTaskStatusOnBoard(taskId, newStatus) {
+        const taskEl = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+        if (taskEl) {
+            const statusEl = taskEl.querySelector('.task-status');
+            if (statusEl) {
+                statusEl.textContent = newStatus;
+            }
+        }
+    }
+
+
+
     // Уведомления
+    const notificationQueue = [];
+    let isNotificationShowing = false;
+
     function showNotification(title, message, type) {
+        notificationQueue.push({ title, message, type });
+        processNotificationQueue();
+    }
+
+    function processNotificationQueue() {
+        if (isNotificationShowing || notificationQueue.length === 0) return;
+
+        isNotificationShowing = true;
+        const { title, message, type } = notificationQueue.shift();
+
         const notification = document.getElementById('notification');
         const notificationTitle = document.getElementById('notification-title');
         const notificationMessage = document.getElementById('notification-message');
@@ -1526,8 +1749,24 @@
 
         setTimeout(() => {
             notification.classList.remove('show');
-            setTimeout(() => notification.classList.add('hidden'), 300);
+            setTimeout(() => {
+                notification.classList.add('hidden');
+                isNotificationShowing = false;
+                processNotificationQueue();
+            }, 300);
         }, 5000);
+    }
+
+    function formatLocalDateTime(date) {
+        const pad = num => String(num).padStart(2, '0');
+
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1); // месяцы от 0 до 11
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 </script>
 </body>

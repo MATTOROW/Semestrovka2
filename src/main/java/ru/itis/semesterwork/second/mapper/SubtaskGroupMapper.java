@@ -3,11 +3,14 @@ package ru.itis.semesterwork.second.mapper;
 import org.mapstruct.*;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.CreateSubtaskGroupRequest;
 import ru.itis.semesterwork.second.dto.request.subtaskgroup.UpdateSubtaskGroupInfoRequest;
-import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupResponse;
+import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupInfoResponse;
+import ru.itis.semesterwork.second.dto.response.subtaskgroup.SubtaskGroupWithSubtasksResponse;
 import ru.itis.semesterwork.second.model.SubtaskGroupEntity;
 import ru.itis.semesterwork.second.validation.model.NullableField;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
@@ -18,7 +21,11 @@ public interface SubtaskGroupMapper {
     SubtaskGroupEntity toEntity(CreateSubtaskGroupRequest createSubtaskGroupRequest);
 
     @Mapping(target = "id", source = "innerId")
-    SubtaskGroupResponse toResponse(SubtaskGroupEntity subtaskGroupEntity);
+    SubtaskGroupInfoResponse toResponse(SubtaskGroupEntity subtaskGroupEntity);
+
+    @Mapping(target = "id", source = "subtaskGroupEntity.innerId")
+    @Mapping(target = "subtasks", source = "subtasksResponse")
+    SubtaskGroupWithSubtasksResponse toResponseWithMembers(SubtaskGroupEntity subtaskGroupEntity, List<SubtaskResponse> subtasksResponse);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSubtaskGroupEntity(UpdateSubtaskGroupInfoRequest request, @MappingTarget SubtaskGroupEntity taskEntity);

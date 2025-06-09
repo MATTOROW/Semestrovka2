@@ -7,6 +7,7 @@ import ru.itis.semesterwork.second.dto.request.subtask.CreateSubtaskRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskInfoRequest;
 import ru.itis.semesterwork.second.dto.request.subtask.UpdateSubtaskOrderRequest;
 import ru.itis.semesterwork.second.dto.response.subtask.SubtaskResponse;
+import ru.itis.semesterwork.second.dto.response.task.TaskStatusResponse;
 import ru.itis.semesterwork.second.service.SubtaskService;
 
 import java.util.List;
@@ -49,7 +50,7 @@ public class SubtaskRestController implements SubtaskRestAPI {
     }
 
     @Override
-    public void changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
-        subtaskService.changeStatus(innerId, projectId, categoryId, taskId, groupId, completed);
+    public TaskStatusResponse changeStatus(UUID innerId, UUID projectId, UUID categoryId, UUID taskId, UUID groupId, Boolean completed) {
+        return subtaskService.changeStatus(innerId, projectId, categoryId, taskId, groupId, completed);
     }
 }
