@@ -1460,7 +1460,7 @@
             const newTask = {
                 id: 'temp-' + Date.now(),
                 ...request,
-                status: 'New',
+                status: Date.now() > Date.parse(deadline) ? 'EXPIRED' : 'NOT_COMPLETED',
                 deadline: deadline
             };
 
@@ -1482,8 +1482,9 @@
             });
 
             if (response.ok) {
-                const createdTask = await response.json();
-
+                const data = await response;
+                const createdTask = newTask;
+                createdTask.id = data
                 // Заменяем временную задачу на созданную
                 const taskIndex = tasksByCategory[categoryId].findIndex(t => t.id === newTask.id);
                 if (taskIndex >= 0) {
@@ -1754,7 +1755,7 @@
                 isNotificationShowing = false;
                 processNotificationQueue();
             }, 300);
-        }, 5000);
+        }, 1500);
     }
 
     function formatLocalDateTime(date) {

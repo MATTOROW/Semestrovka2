@@ -76,6 +76,22 @@ public class TaskService {
     public void patchByInnerId(UUID innerId, UUID projectId, UUID categoryId, UpdateTaskInfoRequest request) {
         TaskEntity task = hierarchyValidationService.validateTaskHierarchy(projectId, categoryId, innerId);
         taskMapper.updateTaskEntity(request, task);
+        Instant newDeadline = task.getDeadline();
+
+        if (newDeadline != null && Instant.now().compareTo(newDeadline) > 0) {
+            if (task.getStatus().equals(TaskStatus.COMPLETED)) {
+                task.setStatus(TaskStatus.COMPLETED_LATE);
+            } else if (task.getStatus().equals(TaskStatus.NOT_COMPLETED)) {
+                task.setStatus(TaskStatus.EXPIRED);
+            }
+        } else if (newDeadline != null && Instant.now().compareTo(newDeadline) <= 0) {
+            if (task.getStatus().equals(TaskStatus.EXPIRED)) {
+                task.setStatus(TaskStatus.NOT_COMPLETED);
+            } else if (task.getStatus().equals(TaskStatus.COMPLETED_LATE)) {
+                task.setStatus(TaskStatus.COMPLETED);
+            }
+        }
+
         taskRepository.save(task);
     }
 
