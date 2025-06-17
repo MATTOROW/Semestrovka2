@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link th:href="@{/css/navbar.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .project-card {
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .input-field {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.2s ease;
+        }
+        .input-field:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 1px #818cf8;
+        }
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            max-width: 24rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        .notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        .notification.warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .notification-icon {
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+        .member-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: all 0.2s ease;
+        }
+        .member-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+        .role-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .role-owner {
+            background-color: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+        .role-admin {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+        .role-member {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .tab-active {
+            border-bottom: 2px solid #818cf8;
+            color: #818cf8;
+        }
+
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 0.375rem;
+            z-index: 100;
+            margin-top: 0.25rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(51, 65, 85, 0.7);
+        }
+
+        .autocomplete-avatar {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 9999px;
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .loading-more {
+            padding: 0.5rem 1rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        #exitProjectBtn {
+            transition: all 0.2s ease;
+        }
+
+        #exitProjectBtn:hover:not([disabled]) {
+            background-color: rgba(220, 38, 38, 0.1);
+            color: #f87171;
+        }
+
+        #exitProjectBtn[disabled] {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<div th:replace="fragments/navbar :: navbar"></div>
+
+<main id="content" class="min-h-screen container mx-auto px-4 py-8 pt-12 md:pt-16">
+    <!-- Notification container -->
+    <div id="notification" class="notification hidden">
+        <span id="notification-icon" class="notification-icon">✓</span>
+        <div>
+            <div id="notification-title" class="font-medium"></div>
+            <div id="notification-message" class="text-sm opacity-90"></div>
+            <ul id="notification-errors" class="mt-1 text-xs list-disc list-inside"></ul>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent
+                      bg-gradient-to-r from-indigo-300 to-purple-400">
+                Project Management
+            </h1>
+            <div class="flex space-x-3" th:if="${currentUserRole == 'OWNER'}">
+                <button id="deleteProjectBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-700
+                             text-white rounded-lg transition-colors">
+                    Delete Project
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Основная информация о проекте -->
+            <div class="project-card rounded-2xl p-6 shadow-xl lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-slate-200">Project Information</h2>
+                </div>
+
+                <form id="projectForm" class="space-y-4">
+                    <input type="hidden" id="projectId" th:value="${project.id}">
+
+                    <div>
+                        <label for="name" class="block text-sm text-slate-300 mb-1.5">Project Name</label>
+                        <input type="text" id="name" name="name" required
+                               th:value="${project.name}"
+                               class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"
+                               th:disabled="${currentUserRole != 'OWNER'}">
+                        <div id="nameError" class="text-xs text-rose-400 mt-1 hidden"></div>
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm text-slate-300 mb-1.5">Description</label>
+                        <textarea id="description" name="description" rows="4"
+                                  th:text="${project.description}"
+                                  class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200"
+                                  th:disabled="${currentUserRole != 'OWNER'}"></textarea>
+                    </div>
+
+                    <div class="flex justify-end pt-2" th:if="${currentUserRole == 'OWNER'}">
+                        <button type="submit" id="saveProjectBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                                            text-white rounded-lg transition-colors">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-6 pt-4 border-t border-slate-700 flex justify-end">
+                    <button id="exitProjectBtn" class="px-4 py-2 border border-rose-600 text-rose-400 hover:bg-rose-600/10
+                    rounded-lg transition-colors">
+                        Exit Project
+                    </button>
+                </div>
+            </div>
+
+            <!-- Участники проекта -->
+            <div class="project-card rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-slate-200">Members</h2>
+                    <button id="addMemberBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700
+                                text-white rounded-lg transition-colors text-sm"
+                            th:disabled="${currentUserRole != 'OWNER'}">
+                        Add Member
+                    </button>
+                </div>
+
+                <div class="space-y-3" id="membersList">
+                    <!-- Шаблон для каждого участника -->
+                    <template id="memberTemplate">
+                        <div class="member-card rounded-lg p-4 flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="member-avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"></div>
+                                <div>
+                                    <div class="member-username font-medium text-slate-200"></div>
+                                    <div class="member-joined text-xs text-slate-400"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="member-role role-badge"></span>
+                                <div class="member-actions relative" x-data="{ open: false }" th:if="${currentUserRole == 'OWNER'}">
+                                    <button @click="open = !open" class="text-slate-400 hover:text-white p-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        </svg>
+                                    </button>
+                                    <div x-show="open" @click.away="open = false"
+                                         class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-slate-800 z-10">
+                                        <div class="py-1">
+                                            <button class="member-edit-role block w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">
+                                                Change Role
+                                            </button>
+                                            <button class="member-remove block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления участника -->
+    <div id="addMemberModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="project-card rounded-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-slate-200">Add New Member</h3>
+                <button id="closeAddMemberModal" class="text-slate-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="addMemberForm" class="space-y-4">
+                <div class="autocomplete-container">
+                    <label for="username" class="block text-sm text-slate-300 mb-1.5">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="off"
+                           class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
+                    <div id="usernameError" class="text-xs text-rose-400 mt-1 hidden"></div>
+                    <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+                </div>
+
+                <div>
+                    <label for="role" class="block text-sm text-slate-300 mb-1.5">Role</label>
+                    <select id="role" name="role"
+                            class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
+                        <!-- Роли будут загружены через JS -->
+                    </select>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                                text-white rounded-lg transition-colors">
+                        Add Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Модальное окно подтверждения удаления -->
+    <div id="confirmDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="project-card rounded-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-slate-200">Confirm Deletion</h3>
+                <button id="closeDeleteModal" class="text-slate-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-slate-300 mb-6">Are you sure you want to delete this project? This action cannot be undone.</p>
+
+            <div class="flex justify-end space-x-3">
+                <button id="cancelDelete" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
+                    Cancel
+                </button>
+                <button id="confirmDelete" class="px-4 py-2 bg-rose-600 hover:bg-rose-700
+                            text-white rounded-lg transition-colors">
+                    Delete Project
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Основные элементы
+        const projectForm = document.getElementById('projectForm');
+        const projectId = document.getElementById('projectId').value;
+        const currentUserRole = '[[${currentUserRole}]]';
+        const membersList = document.getElementById('membersList');
+        const addMemberBtn = document.getElementById('addMemberBtn');
+        const addMemberModal = document.getElementById('addMemberModal');
+        const closeAddMemberModal = document.getElementById('closeAddMemberModal');
+        const addMemberForm = document.getElementById('addMemberForm');
+        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        const closeDeleteModal = document.getElementById('closeDeleteModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+
+        // Загружаем участников проекта
+        function loadProjectMembers() {
+            fetch(`/api/v1/projects/${projectId}/members`)
+                .then(response => response.json())
+                .then(members => {
+                    const membersList = document.getElementById('membersList');
+                    const template = document.getElementById('memberTemplate');
+
+                    membersList.innerHTML = '';
+                    membersList.appendChild(template);
+
+                    if (members.length === 0) {
+                        membersList.innerHTML += '<div class="text-center py-4 text-slate-400">No members yet</div>';
+                        return;
+                    }
+
+                    members.forEach(member => {
+                        const clone = template.content.cloneNode(true);
+                        const hash = getStringHash(member.username);
+                        const hue1 = hash % 360;
+                        const hue2 = (hash + 30) % 360;
+
+                        // Заполняем данные участника
+                        const avatar = clone.querySelector('.member-avatar');
+                        avatar.style.background = `linear-gradient(135deg, hsl(${hue1}, 70%, 45%) 0%, hsl(${hue2}, 70%, 60%) 100%)`;
+                        avatar.textContent = member.username.charAt(0).toUpperCase();
+
+                        clone.querySelector('.member-username').textContent = member.username;
+                        clone.querySelector('.member-joined').textContent = member.joinedAt;
+
+                        // Устанавливаем роль
+                        const roleBadge = clone.querySelector('.member-role');
+                        roleBadge.textContent = member.role;
+                        roleBadge.classList.add(
+                            member.role === 'OWNER' ? 'role-owner' :
+                                member.role === 'ADMIN' ? 'role-admin' : 'role-member'
+                        );
+
+                        // Находим элемент с действиями
+                        const memberActions = clone.querySelector('.member-actions');
+
+                        // Добавляем обработчики только если текущий пользователь - владелец И участник не владелец
+                        if (currentUserRole === 'OWNER' && member.role !== 'OWNER' && memberActions) {
+                            const editBtn = clone.querySelector('.member-edit-role');
+                            const removeBtn = clone.querySelector('.member-remove');
+
+                            editBtn.addEventListener('click', () => editMemberRole(member.username));
+                            removeBtn.addEventListener('click', () => removeMember(member.username));
+                        } else if (memberActions) {
+                            // Удаляем кнопки действий если не владелец или для владельца проекта
+                            memberActions.remove();
+                        }
+
+                        membersList.appendChild(clone);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading members:', error);
+                    showNotification('Error', 'Failed to load project members', 'error');
+                });
+        }
+
+
+        // Загружаем доступные роли
+        function loadAvailableRoles() {
+            fetch('/api/v1/projects/roles')
+                .then(response => response.json())
+                .then(roles => {
+                    const roleSelect = document.getElementById('role');
+                    roleSelect.innerHTML = '';
+
+                    roles.forEach(role => {
+                        if (role !== 'OWNER') { // Не позволяем добавлять новых владельцев
+                            const option = document.createElement('option');
+                            option.value = role;
+                            option.textContent = role;
+                            roleSelect.appendChild(option);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading roles:', error);
+                });
+        }
+
+        // Добавляем переменные для управления автодополнением
+        let searchTimeout;
+        let currentPage = 0;
+        let hasMore = true;
+        let isLoading = false;
+        const usernameInput = document.getElementById('username');
+        const autocompleteDropdown = document.getElementById('autocompleteDropdown');
+
+        // Функция для загрузки пользователей по части username
+        function searchUsers(query, page = 0, append = false) {
+            if (!query || query.length < 2) {
+                autocompleteDropdown.style.display = 'none';
+                return;
+            }
+
+            isLoading = true;
+            if (!append) {
+                autocompleteDropdown.innerHTML = '<div class="loading-more">Loading...</div>';
+                currentPage = 0;
+                hasMore = true;
+            }
+
+            fetch(`/api/v1/accounts/search?username=${encodeURIComponent(query)}&page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    if (!append) {
+                        autocompleteDropdown.innerHTML = '';
+                    }
+
+                    if (data.content.length === 0 && !append) {
+                        autocompleteDropdown.innerHTML = '<div class="loading-more">No users found</div>';
+                        hasMore = false;
+                        return;
+                    }
+
+                    data.content.forEach(user => {
+                        const hash = getStringHash(user.username);
+                        const hue1 = hash % 360;
+                        const hue2 = (hash + 30) % 360;
+
+                        const userElement = document.createElement('div');
+                        userElement.className = 'autocomplete-item';
+                        userElement.innerHTML = `
+        <div class="autocomplete-avatar"
+             style="background: linear-gradient(135deg,
+                    hsl(${hue1}, 70%, 45%) 0%,
+                    hsl(${hue2}, 70%, 60%) 100%)">
+            ${user.username.charAt(0).toUpperCase()}
+        </div>
+        <div>${user.username}</div>
+    `;
+
+                        userElement.addEventListener('click', () => {
+                            usernameInput.value = user.username;
+                            autocompleteDropdown.style.display = 'none';
+                        });
+
+                        autocompleteDropdown.appendChild(userElement);
+                    });
+
+                    hasMore = !data.last;
+                    if (hasMore) {
+                        const loadingElement = document.createElement('div');
+                        loadingElement.className = 'loading-more';
+                        loadingElement.textContent = 'Scroll to load more...';
+                        loadingElement.id = 'loadingMore';
+                        autocompleteDropdown.appendChild(loadingElement);
+                    }
+
+                    autocompleteDropdown.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    if (!append) {
+                        autocompleteDropdown.innerHTML = '<div class="loading-more">Error loading users</div>';
+                    }
+                })
+                .finally(() => {
+                    isLoading = false;
+                });
+        }
+
+        // Оптимизированный обработчик ввода с задержкой
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    searchUsers(query);
+                }, 300); // Задержка 300мс для уменьшения количества запросов
+            } else {
+                autocompleteDropdown.style.display = 'none';
+            }
+        });
+
+        // Обработчик скролла для бесконечной подгрузки
+        autocompleteDropdown.addEventListener('scroll', function() {
+            if (isLoading || !hasMore) return;
+
+            const { scrollTop, scrollHeight, clientHeight } = this;
+            const query = usernameInput.value.trim();
+
+            if (scrollTop + clientHeight >= scrollHeight - 50) {
+                const loadingElement = document.getElementById('loadingMore');
+                if (loadingElement) loadingElement.textContent = 'Loading more...';
+
+                currentPage++;
+                searchUsers(query, currentPage, true);
+            }
+        });
+
+        // Закрытие выпадающего списка при клике вне его
+        document.addEventListener('click', function(e) {
+            if (!autocompleteDropdown.contains(e.target)) {
+                autocompleteDropdown.style.display = 'none';
+            }
+        });
+
+        // Изменение роли участника
+        function editMemberRole(username) {
+            fetch('/api/v1/projects/roles')
+                .then(response => response.json())
+                .then(roles => {
+                    // Фильтруем роли, чтобы нельзя было установить OWNER
+                    const availableRoles = roles;
+
+                    // Создаем модальное окно для выбора роли
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    modal.innerHTML = `
+                        <div class="project-card rounded-xl p-6 w-full max-w-md">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-slate-200">Change Role for ${username}</h3>
+                                <button class="close-role-modal text-slate-400 hover:text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="space-y-4">
+                                <select id="newRole" class="input-field w-full rounded-lg px-3 py-2.5 text-slate-200">
+                                    ${availableRoles.map(role => `<option value="${role}">${role}</option>`).join('')}
+                                </select>
+                                <div class="flex justify-end space-x-3 pt-2">
+                                    <button class="cancel-role-change px-4 py-2 text-slate-400 hover:text-white transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button class="confirm-role-change px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                                                text-white rounded-lg transition-colors">
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(modal);
+
+                    // Обработчики для модального окна
+                    modal.querySelector('.close-role-modal').addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                    });
+
+                    modal.querySelector('.cancel-role-change').addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                    });
+
+                    modal.querySelector('.confirm-role-change').addEventListener('click', () => {
+                        const newRole = modal.querySelector('#newRole').value;
+
+                        fetch(`/api/v1/projects/${projectId}/members/${username}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                role: newRole
+                            })
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    showNotification('Success', `Role changed to ${newRole} for ${username}`, 'success');
+                                    loadProjectMembers();
+                                    document.body.removeChild(modal);
+                                } else {
+                                    response.json().then(error => {
+                                        showNotification('Error', error.message || 'Failed to change role', 'error');
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                showNotification('Error', 'Network error. Please try again.', 'error');
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading roles:', error);
+                    showNotification('Error', 'Failed to load available roles', 'error');
+                });
+        }
+
+        // Удаление участника
+        function removeMember(username) {
+            if (!confirm(`Are you sure you want to remove ${username} from the project?`)) return;
+
+            fetch(`/api/v1/projects/${projectId}/members/${username}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        showNotification('Success', `${username} has been removed from the project`, 'success');
+                        loadProjectMembers();
+                    } else {
+                        response.json().then(error => {
+                            showNotification('Error', error.message || 'Failed to remove member', 'error');
+                        });
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error', 'Network error. Please try again.', 'error');
+                });
+        }
+
+        // Обновление информации о проекте
+        projectForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const saveBtn = document.getElementById('saveProjectBtn');
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const updateData = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value
+            };
+
+            fetch(`/api/v1/projects/${projectId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        showNotification('Success', 'Project updated successfully', 'success');
+                    } else {
+                        response.json().then(error => {
+                            if (error.fields) {
+                                handleValidationErrors(error.fields);
+                                showNotification('Validation Error', 'Please correct the form errors', 'error');
+                            } else {
+                                showNotification('Error', error.message || 'Failed to update project', 'error');
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error', 'Network error. Please try again.', 'error');
+                })
+                .finally(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                });
+        });
+
+        // Удаление проекта
+        if (deleteProjectBtn) {
+            deleteProjectBtn.addEventListener('click', function() {
+                confirmDeleteModal.classList.remove('hidden');
+            });
+        }
+
+        if (closeDeleteModal) {
+            closeDeleteModal.addEventListener('click', function() {
+                confirmDeleteModal.classList.add('hidden');
+            });
+        }
+
+        if (cancelDelete) {
+            cancelDelete.addEventListener('click', function() {
+                confirmDeleteModal.classList.add('hidden');
+            });
+        }
+
+        if (confirmDelete) {
+            confirmDelete.addEventListener('click', function() {
+                fetch(`/api/v1/projects/${projectId}`, {
+                    method: 'DELETE'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            showNotification('Success', 'Project has been deleted', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/projects';
+                            }, 1500);
+                        } else {
+                            response.json().then(error => {
+                                showNotification('Error', error.message || 'Failed to delete project', 'error');
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Error', 'Network error. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        confirmDeleteModal.classList.add('hidden');
+                    });
+            });
+        }
+
+        // Добавление участника
+        addMemberBtn.addEventListener('click', function() {
+            addMemberModal.classList.remove('hidden');
+        });
+
+        closeAddMemberModal.addEventListener('click', function() {
+            addMemberModal.classList.add('hidden');
+        });
+
+        addMemberForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const username = usernameInput.value.trim();
+            const role = document.getElementById('role').value;
+
+            if (!username) {
+                showNotification('Error', 'Please select a user', 'error');
+                return;
+            }
+
+            fetch(`/api/v1/projects/${projectId}/members`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    role: role
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        showNotification('Success', `${username} has been added to the project`, 'success');
+                        addMemberModal.classList.add('hidden');
+                        addMemberForm.reset();
+                        loadProjectMembers();
+                    } else {
+                        response.json().then(error => {
+                            if (error.fields) {
+                                handleValidationErrors(error.fields);
+                                showNotification('Validation Error', 'Please correct the form errors', 'error');
+                            } else {
+                                showNotification('Error', error.message || 'Failed to add member', 'error');
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error', 'Network error. Please try again.', 'error');
+                });
+        });
+
+        // Обработка ошибок валидации
+        function handleValidationErrors(fields) {
+            document.querySelectorAll('[id$="Error"]').forEach(el => {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+
+            for (const [field, error] of Object.entries(fields)) {
+                const errorElement = document.getElementById(`${field}Error`);
+                if (errorElement) {
+                    errorElement.textContent = error;
+                    errorElement.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Показ уведомлений
+        function showNotification(title, message, type) {
+            const notification = document.getElementById('notification');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+
+            notification.className = 'notification';
+            notification.classList.add(type);
+            notificationIcon.textContent = type === 'success' ? '✓' : type === 'error' ? '✗' : '!';
+
+            notification.classList.remove('hidden');
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.classList.add('hidden'), 300);
+            }, 5000);
+        }
+
+        // Инициализация при загрузке
+        loadProjectMembers();
+        if (currentUserRole === 'OWNER') {
+            loadAvailableRoles();
+        }
+
+        function getStringHash(str) {
+            let hash = 0;
+            if (str.length === 0) return hash;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return Math.abs(hash);
+        }
+
+        const exitProjectBtn = document.getElementById('exitProjectBtn');
+
+        exitProjectBtn.addEventListener('click', function() {
+            if (!confirm('Are you sure you want to leave this project?')) return;
+
+            fetch(`/api/v1/projects/${projectId}/members/me`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.status === 204) {
+                        showNotification('Success', 'You have left the project', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/projects'; // Перенаправляем на список проектов
+                        }, 1500);
+                    } else if (response.status === 409) {
+                        response.json().then(error => {
+                            showNotification('Cannot Exit', error.message || 'Owners cannot leave the project', 'error');
+                        });
+                    } else {
+                        response.json().then(error => {
+                            showNotification('Error', error.message || 'Failed to leave project', 'error');
+                        });
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error', 'Network error. Please try again.', 'error');
+                });
+        });
+    });
+</script>
+</body>
+</html>

@@ -240,7 +240,7 @@
             <p class="text-slate-400 text-sm mt-1" th:text="${project.description} ?: 'No description'"></p>
         </div>
         <div class="flex space-x-4">
-            <button onclick="openSettings()" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
+            <button onclick="window.location.href=window.location.pathname + '/edit'" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
                 Settings
             </button>
             <button onclick="openCreateCategoryModal()"

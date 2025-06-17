@@ -8,14 +8,13 @@ import org.springframework.validation.annotation.Validated;
 import ru.itis.semesterwork.second.dto.request.projectmember.AddMemberRequest;
 import ru.itis.semesterwork.second.dto.request.projectmember.UpdateMemberRoleRequest;
 import ru.itis.semesterwork.second.dto.response.projectmember.ProjectMemberResponse;
-import ru.itis.semesterwork.second.exception.AccountIsMemberConflictException;
-import ru.itis.semesterwork.second.exception.OwnerExitingConflictException;
-import ru.itis.semesterwork.second.exception.ProjectMemberNotFoundException;
-import ru.itis.semesterwork.second.exception.ProjectNotFoundException;
+import ru.itis.semesterwork.second.exception.*;
 import ru.itis.semesterwork.second.mapper.ProjectMemberMapper;
+import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.model.ProjectEntity;
 import ru.itis.semesterwork.second.model.ProjectMemberEntity;
 import ru.itis.semesterwork.second.model.ProjectRole;
+import ru.itis.semesterwork.second.repository.AccountRepository;
 import ru.itis.semesterwork.second.repository.ProjectMemberRepository;
 import ru.itis.semesterwork.second.repository.ProjectRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
@@ -32,6 +31,7 @@ public class ProjectMemberService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberMapper projectMemberMapper;
+    private final AccountRepository accountRepository;
 
     @Transactional
     public void addMember(UUID projectId, @Valid AddMemberRequest request) {
@@ -42,7 +42,13 @@ public class ProjectMemberService {
             throw new AccountIsMemberConflictException(request.username());
         }
 
+        AccountEntity account = accountRepository.findByUsername(request.username()).orElseThrow(
+                () -> new CustomAccountNotFoundServiceException(request.username())
+        );
+
         ProjectMemberEntity member = projectMemberMapper.toEntity(request);
+        member.setAccount(account);
+
         project.addMember(member);
     }
 
@@ -63,7 +69,7 @@ public class ProjectMemberService {
                 .get();
 
         if (request.role().equals(ProjectRole.OWNER.name())) {
-            me.setRole(ProjectRole.OWNER);
+            me.setRole(ProjectRole.ADMIN);
         }
 
         member.setRole(ProjectRole.valueOf(request.role()));

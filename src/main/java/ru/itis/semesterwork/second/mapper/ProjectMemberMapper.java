@@ -14,6 +14,7 @@ public interface ProjectMemberMapper {
 
     @Mapping(target = "role", source = "role")
     @Mapping(target = "joinedAt", source = "addedAt")
+    @Mapping(target = "username", source = "account.username")
     ProjectMemberResponse toResponse(ProjectMemberEntity projectMemberEntity);
 
 
