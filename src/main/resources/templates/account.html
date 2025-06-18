@@ -6,6 +6,9 @@
     <title th:text="${isOwner ? 'Your Profile' : account.username + &quot;'s Profile&quot;}">Account Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link th:href="@{/css/navbar.css}" rel="stylesheet">
+    <script th:src="@{/js/csrf.js}" defer></script>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
@@ -41,6 +44,22 @@
             color: transparent;
             background-image: linear-gradient(135deg, #818cf8 0%, #c471f5 100%);
         }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -50,24 +69,24 @@
 <main id="content" class="min-h-screen flex items-center justify-center p-4">
     <div class="profile-card rounded-2xl max-w-md w-full p-8 space-y-6 shadow-2xl hover:glow-effect">
         <div class="flex flex-col items-center space-y-5">
-            <!-- Аватарка с исправленной загрузкой изображения -->
-            <div class="relative">
-                <div th:if="${account.iconUrl == null or account.iconUrl.isEmpty()}"
-                     th:with="firstChar=${#strings.substring(account.username, 0, 1).toUpperCase()},
-                          hue=${(T(java.lang.Math).abs(account.username.hashCode()) % 360)},
-                          gradientColor1=${'hsl(' + hue + ', 70%, 45%)'},
-                          gradientColor2=${'hsl(' + ((hue + 30) % 360) + ', 70%, 60%)'}"
-                     class="w-32 h-32 rounded-full border-2 border-white/10 avatar-placeholder"
-                     th:style="'background: linear-gradient(135deg, ' + ${gradientColor1} + ' 0%, ' + ${gradientColor2} + ' 100%)'"
-                     th:text="${firstChar}">
+            <!-- Аватарка с динамической загрузкой -->
+            <div class="relative w-32 h-32">
+
+                <!-- Реальный аватар -->
+                <img id="profileAvatar"
+                     class="w-full h-full rounded-full object-cover border-2 border-white/10"
+                     th:src="@{'/api/v1/avatars/' + ${currentUser.username}}"
+                     onerror="this.style.display='none'; document.getElementById('avatarPlaceholder').style.display='flex'">
+
+                <!-- Градиентный плейсхолдер -->
+                <div id="avatarPlaceholder"
+                     class="w-full h-full rounded-full border-2 border-white/10 avatar-placeholder absolute inset-0"
+                     th:style="'display: none;' + 'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
+                     th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
                 </div>
-                <img th:unless="${account.iconUrl == null or account.iconUrl.isEmpty()}"
-                     th:src="@{'/images/' + ${account.iconUrl}}"
-                     alt="Profile image"
-                     class="w-28 h-28 rounded-full object-cover border-2 border-white/10">
             </div>
 
-            <!-- Имя пользователя с более выраженным акцентом -->
+            <!-- Имя пользователя -->
             <h1 class="text-4xl font-bold text-center username-gradient mb-1">
                 <span th:text="${account.username}" class="tracking-tight hover:tracking-normal transition-all duration-300"></span>
             </h1>
@@ -78,11 +97,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span th:text="${account.email}" class="text-lg"></span>
+                    <span th:text="${account.email}"></span>
                 </div>
             </div>
 
-            <!-- Описание с менее акцентированным стилем -->
+            <!-- Описание -->
             <div th:if="${account.description != null and !account.description.isEmpty()}"
                  class="text-center text-slate-400 text-sm leading-relaxed px-4 py-2 rounded-lg max-w-xs">
                 <span th:text="${account.description}"></span>
@@ -93,12 +112,12 @@
             </div>
         </div>
 
-        <!-- Упрощенный разделитель -->
+        <!-- Разделитель -->
         <div class="pt-1">
             <div class="h-px bg-slate-700/50"></div>
         </div>
 
-        <!-- Статус аккаунта (более компактный) -->
+        <!-- Статус аккаунта -->
         <div class="text-center text-sm text-slate-400 flex justify-center items-center space-x-2">
             <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
             <span th:text="${isOwner ? 'Your active account' : 'Active account'}"></span>

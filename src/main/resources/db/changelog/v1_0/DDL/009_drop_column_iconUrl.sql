@@ -1,0 +1,1 @@
+ALTER TABLE account_info DROP COLUMN image_url;

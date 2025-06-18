@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <script th:src="@{/js/csrf.js}" defer></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link th:href="@{/css/navbar.css}" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
@@ -152,30 +155,29 @@
 
             <!-- Блок аватара -->
             <div class="flex flex-col items-center space-y-1">
-                <label class="avatar-label cursor-pointer relative">
+                <label class="avatar-label cursor-pointer relative" for="avatarUpload">
+                    <input type="file" id="avatarUpload" accept="image/*" class="hidden">
                     <div id="avatarContainer" class="avatar-container border-2 border-indigo-500/50">
                         <!-- Превью загруженного изображения -->
                         <img id="avatarImage" class="avatar-image w-full h-full object-cover"
-                             th:src="${currentUser.iconUrl != null} ? @{'/images/' + ${currentUser.iconUrl}} : ''"
-                             style="display: none;">
+                             th:src="@{'/api/v1/avatars/' + ${currentUser.username}}"
+                             onerror="this.style.display='none'; document.getElementById('avatarPlaceholder').style.display='flex'">
 
                         <!-- Градиентный плейсхолдер -->
                         <div id="avatarPlaceholder" class="avatar-placeholder"
-                             th:style="'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
+                             th:style="'display: none;' + 'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
                              th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
                         </div>
 
                         <!-- Наложение для изменения -->
                         <div class="avatar-overlay">
-                        <span class="text-white text-center text-sm bg-black/50 px-2 py-1 rounded">
-                            View photo
-                        </span>
+                <span class="text-white text-center text-sm bg-black/50 px-2 py-1 rounded">
+                    Change photo
+                </span>
                         </div>
                     </div>
                 </label>
-                <div id="defaultIconNote" class="default-icon-note mt-1" th:if="${currentUser.iconUrl == null}">
-                    Generated from your username
-                </div>
+                <div id="avatarError" class="text-xs text-rose-400 mt-1 hidden"></div>
             </div>
 
             <!-- Поля формы -->
@@ -197,14 +199,22 @@
             </div>
 
             <!-- Кнопки -->
-            <div class="flex justify-end space-x-3 pt-3">
-                <a href="/account" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
-                    Cancel
-                </a>
-                <button type="submit" id="submitBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
-                                            text-white rounded-lg transition-colors">
-                    Save Changes
-                </button>
+            <div class="flex justify-between pt-3">
+                <div>
+                    <button type="button" id="deleteAccountBtn"
+                            class="px-4 py-2 text-rose-500 hover:text-rose-400 transition-colors">
+                        Delete Account
+                    </button>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="/account" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" id="submitBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                                                text-white rounded-lg transition-colors">
+                        Save Changes
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -222,21 +232,112 @@
         const descriptionInput = document.getElementById('description');
         const submitBtn = document.getElementById('submitBtn');
 
-        // Инициализация превью аватара
-        function initAvatarPreview() {
-            if (avatarImage.src && avatarImage.src !== window.location.href) {
-                avatarImage.style.display = 'block';
-                avatarPlaceholder.style.display = 'none';
-                if (defaultIconNote) defaultIconNote.style.display = 'none';
-            } else {
-                avatarImage.style.display = 'none';
-                avatarPlaceholder.style.display = 'flex';
-                if (defaultIconNote) defaultIconNote.style.display = 'block';
-            }
-        }
 
-        // Инициализация при загрузке
-        initAvatarPreview();
+        const avatarUpload = document.getElementById('avatarUpload');
+        const avatarError = document.getElementById('avatarError');
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'loading-spinner hidden';
+        document.getElementById('avatarContainer').appendChild(loadingSpinner);
+
+        avatarUpload.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Валидация файла
+            if (!file.type.startsWith('image/')) {
+                avatarError.textContent = 'File must be an image';
+                avatarError.classList.remove('hidden');
+                return;
+            }
+
+            const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            if (!validExtensions.includes(fileExt)) {
+                avatarError.textContent = 'Allowed formats: PNG, JPG, JPEG, GIF, WEBP';
+                avatarError.classList.remove('hidden');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                avatarError.textContent = 'File size must be less than 5MB';
+                avatarError.classList.remove('hidden');
+                return;
+            }
+
+            avatarError.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/v1/avatars/me', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Обновляем превью
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        avatarImage.src = e.target.result;
+                        avatarImage.style.display = 'block';
+                        avatarPlaceholder.style.display = 'none';
+                        if (defaultIconNote) defaultIconNote.style.display = 'none';
+                        showNotification('Success', 'Avatar updated successfully', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to upload avatar');
+                }
+            } catch (error) {
+                showNotification('Error', error.message, 'error');
+                console.error('Avatar upload error:', error);
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                avatarUpload.value = ''; // Сбрасываем input
+            }
+        });
+
+        // Добавим обработчик для удаления аватара по долгому нажатию
+        let longPressTimer;
+        const avatarLabel = document.querySelector('.avatar-label');
+
+        avatarLabel.addEventListener('mousedown', function() {
+            longPressTimer = setTimeout(async () => {
+                try {
+                    if (!confirm('Are you sure you want to delete your avatar?')) return;
+
+                    loadingSpinner.classList.remove('hidden');
+                    const response = await fetch('/api/v1/avatars/me', {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        avatarImage.style.display = 'none';
+                        avatarPlaceholder.style.display = 'flex';
+                        if (defaultIconNote) defaultIconNote.style.display = 'block';
+                        showNotification('Success', 'Avatar removed successfully', 'success');
+                    } else {
+                        throw new Error('Failed to delete avatar');
+                    }
+                } catch (error) {
+                    showNotification('Error', error.message, 'error');
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                }
+            }, 1000); // 1 second long press
+        });
+
+        avatarLabel.addEventListener('mouseup', function() {
+            clearTimeout(longPressTimer);
+        });
+
+        avatarLabel.addEventListener('mouseleave', function() {
+            clearTimeout(longPressTimer);
+        });
+
 
         // Form submission
         form.addEventListener('submit', async function(e) {
@@ -292,6 +393,41 @@
                 }
             }
         }
+
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+        deleteAccountBtn.addEventListener('click', async function() {
+
+            if (!confirm('Are you sure you want to delete your account? This action cannot be undone!')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/accounts/delete/${currentUsername}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showNotification('Success', 'Account deleted successfully', 'success');
+
+                    // Сначала выполняем logout
+                    await fetch('/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        }
+                        // body: `_csrf=${getCsrfToken()}`
+                    });
+
+                    // Затем перенаправляем на главную
+                    window.location.href = '/?accountDeleted=true';
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to delete account');
+                }
+            } catch (error) {
+                showNotification('Error', error.message, 'error');
+            }
+        });
 
         function showNotification(title, message, type) {
             const notification = document.getElementById('notification');

@@ -50,5 +50,13 @@ springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
-file:
-  icon-storage: uploaded/account-icons
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: avatars
+
+email:
+  api-key: 6zkp9eptodxig3anwwo1nkc5i7p48upcyca5b15y
+  email: cacadada26@gmail.com
+  name: Rello2.0@noreply

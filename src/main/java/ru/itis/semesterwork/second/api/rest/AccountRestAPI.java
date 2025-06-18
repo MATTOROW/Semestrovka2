@@ -1,5 +1,7 @@
 package ru.itis.semesterwork.second.api.rest;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -49,5 +51,9 @@ public interface AccountRestAPI {
     @DeleteMapping("/delete/{username}")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("@accountSecurityService.isOwner(#username)")
-    void deleteByUsername(@PathVariable("username") String username);
+    void deleteByUsername(
+            @PathVariable("username") String username,
+            HttpServletRequest request,
+            HttpServletResponse response
+    );
 }

@@ -18,9 +18,6 @@ public class AccountInfoEntity {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "image_url")
-    private String iconUrl;
-
     @OneToOne
     @MapsId
     @JoinColumn(name = "account_id")

@@ -1,8 +1,13 @@
 package ru.itis.semesterwork.second.controller.rest;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.AccountRestAPI;
 import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
@@ -19,6 +24,7 @@ import ru.itis.semesterwork.second.util.SecurityContextHelper;
 public class AccountRestController implements AccountRestAPI {
 
     private final AccountService accountService;
+    private final SecurityContextLogoutHandler logoutHandler;
 
     @Override
     public AccountDetailedResponse getCurrentAccount() {
@@ -55,7 +61,12 @@ public class AccountRestController implements AccountRestAPI {
     }
 
     @Override
-    public void deleteByUsername(String username) {
+    public void deleteByUsername(String username, HttpServletRequest request, HttpServletResponse response) {
         accountService.deleteByUsername(username);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName().equals(username)) {
+            logoutHandler.logout(request, response, auth);
+        }
     }
 }

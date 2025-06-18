@@ -47,7 +47,10 @@ public class SubtaskService {
         SubtaskGroupEntity subtaskGroupEntity = hierarchyValidationService.validateSubtaskGroupHierarchy(projectId, categoryId, taskId, groupId);
         subtaskEntity.setSubtaskGroup(subtaskGroupEntity);
         subtaskEntity.setPosition(subtaskRepository.countBySubtaskGroupInnerId(groupId));
-        return subtaskRepository.save(subtaskEntity).getInnerId();
+        statusService.updateGroupStatus(subtaskGroupEntity.getId());
+        UUID id = subtaskRepository.save(subtaskEntity).getInnerId();
+        statusService.updateGroupStatus(subtaskGroupEntity.getId());
+        return id;
     }
 
     @Transactional

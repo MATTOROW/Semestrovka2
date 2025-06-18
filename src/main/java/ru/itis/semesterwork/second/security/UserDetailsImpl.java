@@ -36,8 +36,4 @@ public class UserDetailsImpl implements UserDetails {
     public String getDescription() {
         return account.getAccountInfoEntity().getDescription();
     }
-
-    public String getIconUrl() {
-        return account.getAccountInfoEntity().getIconUrl();
-    }
 }

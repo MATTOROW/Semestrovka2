@@ -18,18 +18,17 @@
     <div th:if="${currentUser != null}" class="relative" x-data="{ open: false }">
         <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
             <div class="w-8 h-8 rounded-full overflow-hidden relative">
-                <img th:if="${currentUser.iconUrl != null}"
-                     th:src="@{'/images/' + ${currentUser.iconUrl}}"
-                     class="w-full h-full object-cover">
+                <!-- Аватар пользователя -->
+                <img id="navAvatarImage"
+                     th:attr="src=${'/api/v1/avatars/' + currentUser.username}"
+                     class="w-full h-full object-cover"
+                     onerror="this.style.display='none'; document.getElementById('navAvatarPlaceholder').style.display='flex'">
 
-                <div th:unless="${currentUser.iconUrl != null}"
+                <!-- Градиентный плейсхолдер -->
+                <div id="navAvatarPlaceholder"
                      class="w-full h-full absolute inset-0 flex items-center justify-center nav-avatar-placeholder"
-                     th:with="firstChar=${#strings.substring(currentUser.username, 0, 1).toUpperCase()},
-                              hue=${(T(java.lang.Math).abs(currentUser.username.hashCode()) % 360)},
-                              gradientColor1=${'hsl(' + hue + ', 70%, 45%)'},
-                              gradientColor2=${'hsl(' + ((hue + 30) % 360) + ', 70%, 60%)'}"
-                     th:style="'background: linear-gradient(135deg, ' + ${gradientColor1} + ' 0%, ' + ${gradientColor2} + ' 100%)'"
-                     th:text="${firstChar}">
+                     th:style="'display: none;' + 'background: linear-gradient(135deg, ' + ${'hsl(' + (T(java.lang.Math).abs(currentUser.username.hashCode()) % 360) + ', 70%, 45%)'} + ' 0%, ' + ${'hsl(' + ((T(java.lang.Math).abs(currentUser.username.hashCode()) + 30) % 360) + ', 70%, 60%)'} + ' 100%)'"
+                     th:text="${#strings.substring(currentUser.username, 0, 1).toUpperCase()}">
                 </div>
             </div>
 
