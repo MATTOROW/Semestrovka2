@@ -1,6 +1,5 @@
 package ru.itis.semesterwork.second.service;
 
-import io.minio.errors.MinioException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
@@ -23,8 +23,6 @@ import ru.itis.semesterwork.second.mapper.AccountMapper;
 import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
-
-import javax.security.auth.login.AccountNotFoundException;
 
 
 @Service

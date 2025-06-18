@@ -24,6 +24,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
     Page<AccountEntity> findAllByUsernameContainsIgnoreCase(String username, Pageable pageable);
 
+    @Query("SELECT a.username FROM AccountEntity a WHERE a.email = :email")
+    String getAccountEntityUsernameByEmail(@Param("email") String email);
+
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
     Boolean existsByUsernameOrEmail(String username, String email);

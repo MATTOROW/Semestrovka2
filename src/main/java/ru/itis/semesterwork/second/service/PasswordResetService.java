@@ -3,11 +3,15 @@ package ru.itis.semesterwork.second.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Service;
 import ru.itis.semesterwork.second.dto.request.auth.PasswordResetRequest;
 import ru.itis.semesterwork.second.dto.request.auth.PasswordResetTokenRequest;
 import ru.itis.semesterwork.second.exception.PasswordResetTokenForbiddenException;
+import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.model.PasswordResetTokenEntity;
 import ru.itis.semesterwork.second.repository.AccountRepository;
 import ru.itis.semesterwork.second.repository.PasswordResetTokenRepository;
@@ -23,6 +27,7 @@ public class PasswordResetService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailSender emailSender;
+    private final SessionRegistry sessionRegistry;
 
     private static final int EXPIRATION = 30; // минуты
 
@@ -74,5 +79,15 @@ public class PasswordResetService {
         }
 
         accountRepository.updatePasswordByEmail(request.email(), passwordEncoder.encode(request.newPassword()));
+        String username = accountRepository.getAccountEntityUsernameByEmail(request.email());
+
+        sessionRegistry.getAllPrincipals().stream()
+                .filter(p -> ((AccountEntity) p).getUsername().equals(username))
+                .findFirst()
+                .ifPresent(principal -> {
+                    sessionRegistry.getAllSessions(principal, false)
+                            .forEach(SessionInformation::expireNow);
+                });
+
     }
 }
