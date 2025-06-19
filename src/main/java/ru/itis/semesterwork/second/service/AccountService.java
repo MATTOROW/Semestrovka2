@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;

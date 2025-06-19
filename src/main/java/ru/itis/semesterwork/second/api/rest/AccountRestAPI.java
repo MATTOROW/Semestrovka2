@@ -17,9 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.auth.RegistrationRequest;
+import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.dto.response.account.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.account.AccountResponse;
-import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 
 
 @Tag(name = "Account Management", description = "API для управления аккаунтами")

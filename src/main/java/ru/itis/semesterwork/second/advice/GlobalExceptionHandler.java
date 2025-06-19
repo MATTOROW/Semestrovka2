@@ -14,7 +14,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 import ru.itis.semesterwork.second.exception.ServiceException;
 
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 

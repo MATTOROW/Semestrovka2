@@ -12,7 +12,6 @@ import ru.itis.semesterwork.second.dto.request.task.UpdateTaskInfoRequest;
 import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.dto.response.task.TaskFullResponse;
 import ru.itis.semesterwork.second.dto.response.task.TaskShortResponse;
-import ru.itis.semesterwork.second.exception.TaskNotFoundException;
 import ru.itis.semesterwork.second.mapper.TaskMapper;
 import ru.itis.semesterwork.second.model.CategoryEntity;
 import ru.itis.semesterwork.second.model.TaskEntity;

@@ -9,7 +9,6 @@ import ru.itis.semesterwork.second.validation.model.NullableField;
 
 import java.time.Instant;
 
-
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 @Mapper(componentModel = SPRING)

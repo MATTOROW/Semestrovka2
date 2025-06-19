@@ -2,11 +2,9 @@ package ru.itis.semesterwork.second.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Service;
 import ru.itis.semesterwork.second.dto.request.auth.PasswordResetRequest;
 import ru.itis.semesterwork.second.dto.request.auth.PasswordResetTokenRequest;

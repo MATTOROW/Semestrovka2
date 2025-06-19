@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.itis.semesterwork.second.api.rest.AccountRestAPI;
 import ru.itis.semesterwork.second.dto.request.account.AccountUpdateRequest;
 import ru.itis.semesterwork.second.dto.request.auth.RegistrationRequest;
+import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.dto.response.account.AccountDetailedResponse;
 import ru.itis.semesterwork.second.dto.response.account.AccountResponse;
-import ru.itis.semesterwork.second.dto.response.CustomPageResponseDto;
 import ru.itis.semesterwork.second.service.AccountService;
 import ru.itis.semesterwork.second.util.SecurityContextHelper;
 

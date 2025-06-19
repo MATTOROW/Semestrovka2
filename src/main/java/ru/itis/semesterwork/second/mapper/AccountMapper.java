@@ -8,8 +8,6 @@ import ru.itis.semesterwork.second.dto.response.account.AccountResponse;
 import ru.itis.semesterwork.second.model.AccountEntity;
 import ru.itis.semesterwork.second.validation.model.NullableField;
 
-import java.util.Optional;
-
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 @Mapper(componentModel = SPRING)
