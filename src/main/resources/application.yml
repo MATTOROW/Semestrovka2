@@ -62,3 +62,11 @@ email:
   api-key: 6zkp9eptodxig3anwwo1nkc5i7p48upcyca5b15y
   email: cacadada26@gmail.com
   name: Rello2.0@noreply
+
+my:
+  spring:
+    logging:
+      enabled: true
+      console-enabled: true
+      file-enabled: true
+      level: debug
