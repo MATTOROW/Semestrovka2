@@ -27,4 +27,9 @@ public class PasswordResetTokenEntity {
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
+
+    @Override
+    public int hashCode() {
+        return id == null ? super.hashCode() : id.hashCode();
+    }
 }

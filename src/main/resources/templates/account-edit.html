@@ -409,15 +409,6 @@
                 if (response.ok) {
                     showNotification('Success', 'Account deleted successfully', 'success');
 
-                    // Сначала выполняем logout
-                    await fetch('/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        }
-                        // body: `_csrf=${getCsrfToken()}`
-                    });
-
                     // Затем перенаправляем на главную
                     window.location.href = '/?accountDeleted=true';
                 } else {

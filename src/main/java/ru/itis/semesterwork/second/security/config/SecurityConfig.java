@@ -32,15 +32,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/register", "/api/v1/accounts/create", "/login"))
+                        .ignoringRequestMatchers("/register", "/api/v1/accounts/create", "/login", "/"))
                 .formLogin(form -> form
                         .loginPage("/login")
                         .failureUrl("/login?error")
-                        .defaultSuccessUrl("/")
+                        .defaultSuccessUrl("/projects")
                         .permitAll()
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/register").permitAll()
+                        .requestMatchers("/login", "/register", "/").permitAll()
                         .requestMatchers("/api/v1/accounts/{username}", "/api/v1/accounts/create").permitAll()
                         .requestMatchers("/api/v1/accounts/current",
                                 "/api/v1/accounts/update/{username}",
@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/api/v1/accounts/delete/{username}"
                         ).authenticated()
                         .requestMatchers(
-                                "/css/**", "/js/**"
+                                "/css/**", "/js/**", "/img/**"
                         ).permitAll()
                         .requestMatchers("/forgot-password", "/reset-password").permitAll()
                         .requestMatchers("/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()

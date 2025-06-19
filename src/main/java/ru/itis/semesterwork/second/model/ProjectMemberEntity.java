@@ -45,6 +45,6 @@ public class ProjectMemberEntity {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return id == null ? super.hashCode() : id.hashCode();
     }
 }

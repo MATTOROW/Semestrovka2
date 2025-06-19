@@ -23,4 +23,7 @@ public class AccountInfoEntity {
     @JoinColumn(name = "account_id")
     private AccountEntity account;
 
+    public int hashCode() {
+        return accountId == null ? super.hashCode() : accountId.hashCode();
+    }
 }

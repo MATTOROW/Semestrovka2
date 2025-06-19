@@ -57,6 +57,6 @@ public class SubtaskGroupEntity {
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return innerId.hashCode();
     }
 }
