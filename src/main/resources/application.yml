@@ -49,6 +49,8 @@ server:
 springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+  api-docs:
+    enabled: true
 
 minio:
   endpoint: http://localhost:9000

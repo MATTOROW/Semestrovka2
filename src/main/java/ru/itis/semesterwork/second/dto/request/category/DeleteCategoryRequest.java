@@ -5,9 +5,10 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
+@Schema(description = "Запрос на удаление категории")
 public record DeleteCategoryRequest(
-
+        @Schema(description = "ID новой категории для переноса задач", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
-        @Schema(description = "UUID категории в которую перенесутся все таски")
         UUID newCategoryId
 ) {}
