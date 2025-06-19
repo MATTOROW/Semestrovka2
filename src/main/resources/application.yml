@@ -67,6 +67,6 @@ my:
   spring:
     logging:
       enabled: true
-      console-enabled: true
+      console-enabled: false
       file-enabled: true
       level: debug
